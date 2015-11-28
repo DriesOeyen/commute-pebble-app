@@ -1,0 +1,73 @@
+{
+    "appKeys": {
+        "REQUEST_DEST": 2,
+        "REQUEST_ID": 0,
+        "REQUEST_ORIG": 1,
+        "RESPONSE_DURATION_NORMAL": 5,
+        "RESPONSE_DURATION_TRAFFIC": 6,
+        "RESPONSE_ERROR": 4,
+        "RESPONSE_TYPE": 3
+    },
+    "capabilities": [
+        "location",
+        "configurable"
+    ],
+    "companyName": "Nexworx",
+    "longName": "Commute \u2013 Live traffic",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            {
+                "file": "images/Loading.png",
+                "name": "IMAGE_LOADING",
+                "type": "png"
+            },
+            {
+                "file": "images/Error.png",
+                "name": "IMAGE_ERROR",
+                "type": "png"
+            },
+            {
+                "file": "images/Down.png",
+                "name": "IMAGE_DOWN",
+                "type": "png"
+            },
+            {
+                "file": "images/Up.png",
+                "name": "IMAGE_UP",
+                "type": "png"
+            },
+            {
+                "file": "images/Arrow.png",
+                "name": "IMAGE_ARROW",
+                "type": "png"
+            },
+            {
+                "file": "images/Work.png",
+                "name": "IMAGE_WORK",
+                "type": "png"
+            },
+            {
+                "file": "images/Home.png",
+                "name": "IMAGE_HOME",
+                "type": "png"
+            },
+            {
+                "file": "images/Pin.png",
+                "name": "IMAGE_PIN",
+                "type": "png"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "Commute",
+    "targetPlatforms": [
+        "basalt",
+        "chalk"
+    ],
+    "uuid": "ae5e3925-781e-41b5-b5c0-50f2984fc5ed",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
