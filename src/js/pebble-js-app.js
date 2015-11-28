@@ -1,6 +1,7 @@
 var locationLat;
 var locationLon;
 var locationFound = false;
+var locationError = false;
 var locationOptions = {
 	enableHighAccuracy: true,
 	maximumAge: 120000,
@@ -127,7 +128,9 @@ Pebble.addEventListener("appmessage", function(e) {
 		requestOrig = e.payload.REQUEST_ORIG;
 		requestDest = e.payload.REQUEST_DEST;
 		requestReceived = true;
-		if (locationFound) {
+		if (locationError) {
+			sendError(errorLocation);
+		} else if (locationFound) {
 			directionsFetch();
 		}
 	} else {
@@ -143,7 +146,7 @@ Pebble.addEventListener("appmessage", function(e) {
 
 function locationFetch() {
 	console.log("Fetching location...");
-	navigator.geolocation.getCurrentPosition(locationSuccess, locationError, locationOptions);
+	navigator.geolocation.getCurrentPosition(locationSuccess, locationFailure, locationOptions);
 }
 
 function locationSuccess(pos) {
@@ -158,8 +161,9 @@ function locationSuccess(pos) {
 	}
 }
 
-function locationError(err) {
+function locationFailure(err) {
 	console.log("Location error (" + err.code + "): " + err.message);
+	locationError = true;
 	sendError(errorLocation);
 }
 

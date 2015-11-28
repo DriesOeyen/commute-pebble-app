@@ -573,7 +573,7 @@ static void click_handler_select(ClickRecognizerRef recognizer, void *context) {
 		data_layer_data->mode_delay = !data_layer_data->mode_delay;
 		layer_mark_dirty(window_get_root_layer(window));
 	} else {
-		// If there's a problem, set Select to refresh
+		// If there's a problem, set Select to refresh (don't allow this for location errors)
 		refresh_data();
 	}
 }
