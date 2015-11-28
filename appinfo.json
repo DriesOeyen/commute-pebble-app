@@ -6,14 +6,15 @@
         "RESPONSE_DURATION_NORMAL": 5,
         "RESPONSE_DURATION_TRAFFIC": 6,
         "RESPONSE_ERROR": 4,
-        "RESPONSE_TYPE": 3
+        "RESPONSE_TYPE": 3,
+        "RESPONSE_VIA": 7
     },
     "capabilities": [
         "location",
         "configurable"
     ],
     "companyName": "Nexworx",
-    "longName": "Commute \u2013 Live traffic",
+    "longName": "Commute",
     "projectType": "native",
     "resources": {
         "media": [

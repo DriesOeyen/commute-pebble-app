@@ -205,10 +205,15 @@ function directionsFetch() {
 		if(statusCode === 200) {
 			var responseJson = JSON.parse(responseText);
 			if(responseJson.status === "OK") {
+				var via = "via " + responseJson.routes[0].summary;
+				if(via.length > 15) {
+					via = via.substring(0,12) + "...";
+				}
 				var response = {
 					"requestId": requestId,
 					"durationNormal": Math.round(responseJson.routes[0].legs[0].duration.value / 60),
-					"durationTraffic": Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60)
+					"durationTraffic": Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60),
+					"via": via
 				};
 				if(response.durationTraffic !== null) {
 					directionsSuccess(response);
@@ -245,7 +250,7 @@ function directionsFetch() {
 
 function directionsSuccess(response) {
 	console.log("Directions received!");
-	sendDirections(response.requestId, response.durationNormal, response.durationTraffic);
+	sendDirections(response.requestId, response.durationNormal, response.durationTraffic, response.via);
 }
 
 
@@ -268,11 +273,12 @@ function sendLocated() {
 	sendAppMessage(dictionary, "located");
 }
 
-function sendDirections(requestId, durationNormal, durationTraffic) {
+function sendDirections(requestId, durationNormal, durationTraffic, via) {
 	var dictionary = {
 		"RESPONSE_TYPE": responseTypeDirections,
 		"RESPONSE_DURATION_NORMAL": durationNormal,
 		"RESPONSE_DURATION_TRAFFIC": durationTraffic,
+		"RESPONSE_VIA": via,
 		"REQUEST_ID": requestId
 	};
 	sendAppMessage(dictionary, "directions");

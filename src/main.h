@@ -39,7 +39,8 @@ typedef enum {
 	RESPONSE_TYPE = 3,
 	RESPONSE_ERROR = 4,
 	RESPONSE_DURATION_NORMAL = 5,
-	RESPONSE_DURATION_TRAFFIC = 6
+	RESPONSE_DURATION_TRAFFIC = 6,
+	RESPONSE_VIA = 7
 } AppMessageTupleType;
 
 typedef enum {
@@ -76,6 +77,8 @@ typedef struct {
 	Error error;
 	int duration_current;
 	int duration_delay;
+	char via[16];
+	bool mode_delay;
 } DataLayerData;
 
 
@@ -104,8 +107,8 @@ BitmapLayer *layer_status_icon;
 GBitmap *icon_loading;
 GBitmap *icon_error;
 char string_duration[4];
-char string_duration_label[8];
-char string_caption[20];
+char string_duration_label[14];
+char string_caption[16];
 
 // Children of page icon layer
 BitmapLayer *layer_orig;

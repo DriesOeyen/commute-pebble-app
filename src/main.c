@@ -69,6 +69,7 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 	Tuple *tup_response_error = dict_find(received, RESPONSE_ERROR);
 	Tuple *tup_response_duration_normal = dict_find(received, RESPONSE_DURATION_NORMAL);
 	Tuple *tup_response_duration_traffic = dict_find(received, RESPONSE_DURATION_TRAFFIC);
+	Tuple *tup_response_via = dict_find(received, RESPONSE_VIA);
 	
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
 	int duration_difference;
@@ -101,6 +102,8 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 				data_layer_data->status = STATUS_DONE;
 				data_layer_data->duration_current = tup_response_duration_traffic->value->uint16;
 				data_layer_data->duration_delay = duration_difference;
+				snprintf(data_layer_data->via, sizeof(data_layer_data->via), "%s", tup_response_via->value->cstring);
+				data_layer_data->mode_delay = false;
 				// Set color
 				if(delay_ratio > 0.25) { // Heavy delay
 					color_background = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack);
@@ -232,11 +235,18 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 			snprintf(string_caption, sizeof(string_caption), "Loading...");
 			break;
 		case STATUS_DONE:
-			snprintf(string_duration, sizeof(string_duration), "%d", data_layer_data->duration_current);
+			if(data_layer_data->mode_delay) {
+				// Delay mode
+				snprintf(string_duration, sizeof(string_duration), "%d", data_layer_data->duration_delay);
+				snprintf(string_duration_label, sizeof(string_duration_label), "minute%c delay", (data_layer_data->duration_current==1) ? ' ' : 's');
+			} else {
+				// Main mode
+				snprintf(string_duration, sizeof(string_duration), "%d", data_layer_data->duration_current);
+				snprintf(string_duration_label, sizeof(string_duration_label), "minute%c", (data_layer_data->duration_current==1) ? ' ' : 's');
+			}
 			layer_set_hidden(text_layer_get_layer(layer_duration), false);
-			snprintf(string_duration_label, sizeof(string_duration_label), "minute%c", (data_layer_data->duration_current==1) ? ' ' : 's');
 			layer_set_hidden(text_layer_get_layer(layer_duration_label), false);
-			snprintf(string_caption, sizeof(string_caption), "%d minute%c delay", data_layer_data->duration_delay, (data_layer_data->duration_delay==1) ? ' ' : 's');
+			snprintf(string_caption, sizeof(string_caption), "%s", data_layer_data->via);
 			break;
 		case STATUS_ERROR:
 			bitmap_layer_set_bitmap(layer_status_icon, icon_error);
@@ -267,7 +277,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 					snprintf(string_caption, sizeof(string_caption), "No route found");
 					break;
 				case ERROR_CONFIGURE:
-					snprintf(string_caption, sizeof(string_caption), "Configure app");
+					snprintf(string_caption, sizeof(string_caption), "Configure on phone");
 					break;
 				case ERROR_RECONFIGURE:
 					snprintf(string_caption, sizeof(string_caption), "Reconfigure app");
@@ -324,7 +334,7 @@ static void layer_data_load() {
 		0,
 		(bounds_layer_data.size.h / 2) + 4,
 		bounds_layer_data.size.w,
-		24
+		28
 	);
 	layer_duration_label = text_layer_create(frame_duration_label);
 	if(layer_duration_label == NULL)
@@ -541,7 +551,14 @@ static void click_handler_up(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void click_handler_select(ClickRecognizerRef recognizer, void *context) {
-	refresh_data();
+	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
+	if(data_layer_data->status == STATUS_DONE) {
+		data_layer_data->mode_delay = !data_layer_data->mode_delay;
+		layer_mark_dirty(window_get_root_layer(window));
+	} else {
+		// If there's a problem, set Select to refresh
+		refresh_data();
+	}
 }
 
 static void click_handler_down(ClickRecognizerRef recognizer, void *context) {
