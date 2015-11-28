@@ -7,49 +7,57 @@
  **************************************************/
 
 // Write message to buffer & send
-void send_message(){
-	// Init message
-	DictionaryIterator *iter;
-	app_message_outbox_begin(&iter);
-	
-	// Prepare data
-	request_id += 1;
-	RequestType request_orig;
-	RequestType request_dest;
-	switch((Page) page) {
-		case PAGE_LOCATION_WORK:
-			request_orig = REQUEST_TYPE_LOCATION;
-			request_dest = REQUEST_TYPE_WORK;
-			break;
-		case PAGE_LOCATION_HOME:
-			request_orig = REQUEST_TYPE_LOCATION;
-			request_dest = REQUEST_TYPE_HOME;
-			break;
-		case PAGE_HOME_WORK:
-			request_orig = REQUEST_TYPE_HOME;
-			request_dest = REQUEST_TYPE_WORK;
-			break;
-		case PAGE_WORK_HOME:
-			request_orig = REQUEST_TYPE_WORK;
-			request_dest = REQUEST_TYPE_HOME;
-			break;
-		default:
-			request_orig = -1;
-			request_dest = -1;
+void send_request() {
+	if(connection_service_peek_pebble_app_connection()) {
+		// Bluetooth connected
+		// Init message
+		DictionaryIterator *iter;
+		app_message_outbox_begin(&iter);
+
+		// Prepare data
+		request_id += 1;
+		RequestType request_orig = -1;
+		RequestType request_dest = -1;
+		switch((Page) page) {
+			case PAGE_LOCATION_WORK:
+				request_orig = REQUEST_TYPE_LOCATION;
+				request_dest = REQUEST_TYPE_WORK;
+				break;
+			case PAGE_LOCATION_HOME:
+				request_orig = REQUEST_TYPE_LOCATION;
+				request_dest = REQUEST_TYPE_HOME;
+				break;
+			case PAGE_HOME_WORK:
+				request_orig = REQUEST_TYPE_HOME;
+				request_dest = REQUEST_TYPE_WORK;
+				break;
+			case PAGE_WORK_HOME:
+				request_orig = REQUEST_TYPE_WORK;
+				request_dest = REQUEST_TYPE_HOME;
+				break;
+		}
+
+		// Put data in tuples
+		Tuplet tup_request_id = TupletInteger(REQUEST_ID, request_id);
+		Tuplet tup_request_orig = TupletInteger(REQUEST_ORIG, request_orig);
+		Tuplet tup_request_dest = TupletInteger(REQUEST_DEST, request_dest);
+
+		// Put tuples in dictionary
+		dict_write_tuplet(iter, &tup_request_id);
+		dict_write_tuplet(iter, &tup_request_orig);
+		dict_write_tuplet(iter, &tup_request_dest);
+
+		// Send message
+		app_message_outbox_send();
+	} else {
+		// No Bluetooth connection
+		DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
+		data_layer_data->status = STATUS_ERROR;
+		data_layer_data->error = ERROR_BLUETOOTH;
+		GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
+		window_set_background_color(window, color_background);
+		layer_mark_dirty(window_get_root_layer(window));
 	}
-	
-	// Put data in tuples
-	Tuplet tup_request_id = TupletInteger(REQUEST_ID, request_id);
-	Tuplet tup_request_orig = TupletInteger(REQUEST_ORIG, request_orig);
-	Tuplet tup_request_dest = TupletInteger(REQUEST_DEST, request_dest);
-	
-	// Put tuples in dictionary
-	dict_write_tuplet(iter, &tup_request_id);
-	dict_write_tuplet(iter, &tup_request_orig);
-	dict_write_tuplet(iter, &tup_request_dest);
-	
-	// Send message
-  	app_message_outbox_send();
 }
 
 static void refresh_data() {
@@ -59,7 +67,7 @@ static void refresh_data() {
 	GColor color_background = PBL_IF_COLOR_ELSE(GColorDarkGray, GColorBlack);
 	window_set_background_color(window, color_background);
 	layer_mark_dirty(window_get_root_layer(window));
-	send_message();
+	send_request();
 }
 
 // Called when a message is received from PebbleKitJS
@@ -82,7 +90,7 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 			color_background = PBL_IF_COLOR_ELSE(GColorDarkGray, GColorBlack);
 			window_set_background_color(window, color_background);
 			layer_mark_dirty(window_get_root_layer(window));
-			send_message();
+			send_request();
 			break;
 		case RESPONSE_TYPE_LOCATED:
 			data_layer_data->status = STATUS_FETCHING;
@@ -256,7 +264,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 					snprintf(string_caption, sizeof(string_caption), "Enable timeline");
 					break;
 				case ERROR_LOCATION:
-					snprintf(string_caption, sizeof(string_caption), "Location disabl");
+					snprintf(string_caption, sizeof(string_caption), "No location");
 					break;
 				case ERROR_INTERNET_TIMEOUT:
 					snprintf(string_caption, sizeof(string_caption), "No internet");
@@ -490,8 +498,17 @@ static void window_load(Window *window) {
 	layer_data = layer_create_with_data(frame_data, sizeof(DataLayerData));
 	if(layer_data == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create data layer");
-	DataLayerData *dataLayerData = (DataLayerData*) layer_get_data(layer_data);
-	dataLayerData->status = STATUS_CONNECTING;
+	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
+	if(connection_service_peek_pebble_app_connection()) {
+		// Bluetooth connected
+		data_layer_data->status = STATUS_CONNECTING;
+	} else {
+		// No Bluetooth connection
+		data_layer_data->status = STATUS_ERROR;
+		data_layer_data->error = ERROR_BLUETOOTH;
+		GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
+		window_set_background_color(window, color_background);
+	}
 	//layer_set_clips(layer_data, false);
 	layer_set_update_proc(layer_data, draw_layer_data);
 	layer_data_load();
