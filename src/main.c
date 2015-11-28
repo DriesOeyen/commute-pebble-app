@@ -238,7 +238,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 			if(data_layer_data->mode_delay) {
 				// Delay mode
 				snprintf(string_duration, sizeof(string_duration), "%d", data_layer_data->duration_delay);
-				snprintf(string_duration_label, sizeof(string_duration_label), "minute%c delay", (data_layer_data->duration_current==1) ? ' ' : 's');
+				snprintf(string_duration_label, sizeof(string_duration_label), "minute%c delay", (data_layer_data->duration_delay==1) ? ' ' : 's');
 			} else {
 				// Main mode
 				snprintf(string_duration, sizeof(string_duration), "%d", data_layer_data->duration_current);
@@ -256,10 +256,10 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 					snprintf(string_caption, sizeof(string_caption), "Enable timeline");
 					break;
 				case ERROR_LOCATION:
-					snprintf(string_caption, sizeof(string_caption), "Location disabled");
+					snprintf(string_caption, sizeof(string_caption), "Location disabl");
 					break;
 				case ERROR_INTERNET_TIMEOUT:
-					snprintf(string_caption, sizeof(string_caption), "Web disconnected");
+					snprintf(string_caption, sizeof(string_caption), "No internet");
 					break;
 				case ERROR_INTERNET_UNAVAILABLE:
 					snprintf(string_caption, sizeof(string_caption), "Server error");
@@ -271,19 +271,19 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 					snprintf(string_caption, sizeof(string_caption), "No traffic data");
 					break;
 				case ERROR_RESPONSE_ADDRESS_INCORRECT:
-					snprintf(string_caption, sizeof(string_caption), "Incorrect address");
+					snprintf(string_caption, sizeof(string_caption), "Check addresses");
 					break;
 				case ERROR_RESPONSE_NO_ROUTE:
 					snprintf(string_caption, sizeof(string_caption), "No route found");
 					break;
 				case ERROR_CONFIGURE:
-					snprintf(string_caption, sizeof(string_caption), "Configure on phone");
+					snprintf(string_caption, sizeof(string_caption), "Config on phone");
 					break;
 				case ERROR_RECONFIGURE:
 					snprintf(string_caption, sizeof(string_caption), "Reconfigure app");
 					break;
 				case ERROR_BLUETOOTH:
-					snprintf(string_caption, sizeof(string_caption), "Pebble disconnected");
+					snprintf(string_caption, sizeof(string_caption), "No Bluetooth");
 					break;
 			}
 			break;
