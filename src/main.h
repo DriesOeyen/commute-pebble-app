@@ -9,6 +9,11 @@
  * DEFINES
  **************************************************/
 
+# define DEBUG
+
+#define CHAR_BIT_LENGTH 8
+#define CAPTION_BYTE_LENGTH 49 // For 15 characters: 4 byte ("via ") + 11*4 byte (random UTF-8) + 1 byte ('\0') = 49 byte
+
 #define LAYER_PAGE_INDICATOR_HEIGHT 16
 #define LAYER_PAGE_INDICATOR_MARGIN 4
 
@@ -54,7 +59,8 @@ typedef enum {
 	ERROR_RESPONSE_NO_ROUTE = 7,
 	ERROR_CONFIGURE = 8,
 	ERROR_RECONFIGURE = 9,
-	ERROR_BLUETOOTH = 10
+	ERROR_BLUETOOTH_DISCONNECTED = 10,
+	ERROR_BLUETOOTH_TRANSMISSION = 11
 } Error;
 
 typedef enum {
@@ -77,7 +83,7 @@ typedef struct {
 	Error error;
 	int duration_current;
 	int duration_delay;
-	char via[16];
+	char via[CAPTION_BYTE_LENGTH];
 	bool mode_delay;
 } DataLayerData;
 
@@ -106,9 +112,9 @@ TextLayer *layer_caption;
 BitmapLayer *layer_status_icon;
 GBitmap *icon_loading;
 GBitmap *icon_error;
-char string_duration[4];
+char string_duration[5];
 char string_duration_label[14];
-char string_caption[16];
+char string_caption[CAPTION_BYTE_LENGTH];
 
 // Children of page icon layer
 BitmapLayer *layer_orig;

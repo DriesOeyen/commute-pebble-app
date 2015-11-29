@@ -29,7 +29,8 @@ var errorResponseAddressIncorrect = 6;
 var errorResponseNoRoute = 7;
 var errorConfigure = 8;
 var errorReconfigure = 9;
-//var errorBluetooth = 10;
+//var errorBluetoothDisconnected = 10;
+//var errorBluetoothTransmission = 11;
 
 var storageVersionLatest = 1;
 var gaeBaseUrl = "https://commute-pebble.appspot.com";
@@ -67,7 +68,7 @@ Pebble.addEventListener("ready", function(e) {
 	}
 
 	// Get timeline token
-	if(localStorage.getItem("token_timeline") === null) {
+	if(localStorage.getItem("token_timeline") === null || localStorage.getItem("token_timeline") === "") {
 		// No timeline token yet, try to get one
 		Pebble.getTimelineToken(
 			function(token) { // Success
@@ -200,7 +201,7 @@ function directionsFetch() {
 		"?token_timeline=" + token_timeline +
 		"&request_orig=" + requestOrig +
 		"&request_dest=" + requestDest;
-	if(requestOrig === 0 || requestDest === 0) {
+	if (requestOrig === 0 || requestDest === 0) {
 		url += "&request_coord=" + locationLat + "," + locationLon;
 	}
 
@@ -208,10 +209,12 @@ function directionsFetch() {
 	xhrRequest(url, "GET", function(responseText, statusCode) {
 		if(statusCode === 200) {
 			var responseJson = JSON.parse(responseText);
-			if(responseJson.status === "OK") {
+			if (responseJson.status === "OK") {
 				var via = "via " + responseJson.routes[0].summary;
-				if(via.length > 15) {
+				if (via.length > 15) { // Truncate via label
 					via = via.substring(0,12) + "...";
+				} else if (via.length === 4) { // Empty via label
+					via = "";
 				}
 				var response = {
 					"requestId": requestId,
@@ -219,13 +222,13 @@ function directionsFetch() {
 					"durationTraffic": Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60),
 					"via": via
 				};
-				if(response.durationTraffic !== null) {
+				if (response.durationTraffic !== null) {
 					directionsSuccess(response);
 				} else {
 					console.log("Error: no traffic data available");
 					sendError(errorResponseNoTrafficData);
 				}
-			} else if(responseJson.status === "NOT_FOUND") {
+			} else if (responseJson.status === "NOT_FOUND") {
 				console.log("Error: address incorrect");
 				sendError(errorResponseAddressIncorrect);
 			} else if(responseJson.status === "ZERO_RESULTS") {

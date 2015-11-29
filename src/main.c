@@ -53,13 +53,14 @@ void send_request() {
 		// No Bluetooth connection
 		DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
 		data_layer_data->status = STATUS_ERROR;
-		data_layer_data->error = ERROR_BLUETOOTH;
+		data_layer_data->error = ERROR_BLUETOOTH_DISCONNECTED;
 		GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
 		window_set_background_color(window, color_background);
 		layer_mark_dirty(window_get_root_layer(window));
 	}
 }
 
+// Initiate data refresh
 static void refresh_data() {
 	// Bluetooth connected
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
@@ -70,8 +71,12 @@ static void refresh_data() {
 	send_request();
 }
 
-// Called when a message is received from PebbleKitJS
+// AppMessage callbacks
 static void in_received_handler(DictionaryIterator *received, void *context) {
+	#ifdef DEBUG
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsing incoming AppMessage...");
+	#endif
+	
 	Tuple *tup_request_id = dict_find(received, REQUEST_ID);
 	Tuple *tup_response_type = dict_find(received, RESPONSE_TYPE);
 	Tuple *tup_response_error = dict_find(received, RESPONSE_ERROR);
@@ -139,15 +144,34 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 	}
 }
 
-// Called when an incoming message from PebbleKitJS is dropped
 static void in_dropped_handler(AppMessageResult reason, void *context) {
-	// TODO implement Bluetooth disconnected error
-	APP_LOG(APP_LOG_LEVEL_ERROR, "Error sending message (%d).", reason);
+	APP_LOG(APP_LOG_LEVEL_ERROR, "Dropping incoming AppMessage (error: %d)", reason);
+	
+	// Bluetooth transmission error
+	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
+	data_layer_data->status = STATUS_ERROR;
+	data_layer_data->error = ERROR_BLUETOOTH_TRANSMISSION;
+	GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
+	window_set_background_color(window, color_background);
+	layer_mark_dirty(window_get_root_layer(window));
 }
 
-// Called when PebbleKitJS does not acknowledge receipt of a message
+static void out_sent_handler(DictionaryIterator *sent, void *context) {
+	#ifdef DEBUG
+	APP_LOG(APP_LOG_LEVEL_DEBUG, "PebbleKit JS ACK");
+	#endif
+}
+
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
-	APP_LOG(APP_LOG_LEVEL_ERROR, "Error sending message (%d).", reason);
+	APP_LOG(APP_LOG_LEVEL_ERROR, "PebbleKit JS NACK (error: %d)", reason);
+	
+	// Bluetooth transmission error
+	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
+	data_layer_data->status = STATUS_ERROR;
+	data_layer_data->error = ERROR_BLUETOOTH_TRANSMISSION;
+	GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
+	window_set_background_color(window, color_background);
+	layer_mark_dirty(window_get_root_layer(window));
 }
 
 
@@ -270,7 +294,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 					snprintf(string_caption, sizeof(string_caption), "No internet");
 					break;
 				case ERROR_INTERNET_UNAVAILABLE:
-					snprintf(string_caption, sizeof(string_caption), "Server error");
+					snprintf(string_caption, sizeof(string_caption), "No internet");
 					break;
 				case ERROR_RESPONSE_UNEXPECTED:
 					snprintf(string_caption, sizeof(string_caption), "Server error");
@@ -285,13 +309,16 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 					snprintf(string_caption, sizeof(string_caption), "No route found");
 					break;
 				case ERROR_CONFIGURE:
-					snprintf(string_caption, sizeof(string_caption), "Config on phone");
+					snprintf(string_caption, sizeof(string_caption), "Configure on phone");
 					break;
 				case ERROR_RECONFIGURE:
 					snprintf(string_caption, sizeof(string_caption), "Reconfigure app");
 					break;
-				case ERROR_BLUETOOTH:
+				case ERROR_BLUETOOTH_DISCONNECTED:
 					snprintf(string_caption, sizeof(string_caption), "No Bluetooth");
+					break;
+				case ERROR_BLUETOOTH_TRANSMISSION:
+					snprintf(string_caption, sizeof(string_caption), "Bluetooth error");
 					break;
 			}
 			break;
@@ -505,7 +532,7 @@ static void window_load(Window *window) {
 	} else {
 		// No Bluetooth connection
 		data_layer_data->status = STATUS_ERROR;
-		data_layer_data->error = ERROR_BLUETOOTH;
+		data_layer_data->error = ERROR_BLUETOOTH_DISCONNECTED;
 		GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
 		window_set_background_color(window, color_background);
 	}
@@ -573,7 +600,7 @@ static void click_handler_select(ClickRecognizerRef recognizer, void *context) {
 		data_layer_data->mode_delay = !data_layer_data->mode_delay;
 		layer_mark_dirty(window_get_root_layer(window));
 	} else {
-		// If there's a problem, set Select to refresh (don't allow this for location errors)
+		// If there's a problem, set Select to refresh
 		refresh_data();
 	}
 }
@@ -623,7 +650,7 @@ static void init(void) {
 	// Register AppMessage handlers
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
-	//app_message_register_outbox_sent(out_sent_handler);
+	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 	
 	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
