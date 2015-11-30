@@ -51,12 +51,12 @@ Pebble.addEventListener("ready", function(e) {
 
 	// Check storage version
 	var storage_version_current = parseInt(localStorage.getItem("storage_version"));
-	if(isNaN(storage_version_current)) {
+	if (isNaN(storage_version_current)) {
 		storage_version_current = 0;
 	}
 
 	// Upgrade storage if necessary
-	if(storage_version_current < storageVersionLatest) {
+	if (storage_version_current < storageVersionLatest) {
 		switch(storage_version_current) {
 			case(0): // Upgrade new users
 				localStorage.setItem("storage_version", storageVersionLatest);
@@ -68,62 +68,43 @@ Pebble.addEventListener("ready", function(e) {
 	}
 
 	// Get timeline token
-	if(localStorage.getItem("token_timeline") === null || localStorage.getItem("token_timeline") === "") {
-		// No timeline token yet, try to get one
-		Pebble.getTimelineToken(
-			function(token) { // Success
-				console.log("Saving timeline token: " + token);
-				localStorage.setItem("token_timeline", token);
-				sendReady();
-				locationFetch();
-			}, function(error) { // Failure
-				console.log("Error getting timeline token: " + error);
-				sendError(errorTimelineToken);
-			}
-		);
-	} else {
-		// Timeline token already present
-		sendReady();
-		locationFetch();
-	}
+	Pebble.getTimelineToken(
+		function(token) { // Success
+			console.log("Saving timeline token: " + token);
+			localStorage.setItem("token_timeline", token);
+			sendReady();
+			locationFetch();
+		}, function(error) { // Failure
+			console.log("Error getting timeline token: " + error);
+			sendError(errorTimelineToken);
+		}
+	);
 });
 
-Pebble.addEventListener("showConfiguration", function(e){
-	var token_account = Pebble.getAccountToken();
-	var token_timeline = localStorage.getItem("token_timeline");
-	
-	// Get timeline token
-	if(token_timeline === null) {
-		// No timeline token yet, try to get one
-		Pebble.getTimelineToken(
-			function(token) { // Success
-				console.log("Saving timeline token: " + token);
-				localStorage.setItem("token_timeline", token);
-				show_config_page(token_account, token);
-			}, function(error) { // Failure
-				console.log("Error opening configuration screen, can't get timeline token: " + error);
-				Pebble.showSimpleNotificationOnPebble("Commute uses timeline", "Grant Commute access to your timeline in the Pebble phone app.");
-			}
-		);
-	} else {
-		// Timeline token already present
-		show_config_page(token_account, token_timeline);
-	}
+// Open configuration page
+Pebble.addEventListener("showConfiguration", function(e) {
+	Pebble.getTimelineToken(
+		function(token_timeline) { // Success
+			console.log("Saving timeline token: " + token_timeline);
+			localStorage.setItem("token_timeline", token_timeline);
+			
+			console.log("Opened configuration screen on phone");
+			Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(Pebble.getAccountToken()) + "?token_timeline=" + encodeURIComponent(token_timeline));
+		}, function(error) { // Failure
+			console.log("Error opening configuration screen, can't get timeline token: " + error);
+			Pebble.showSimpleNotificationOnPebble("Commute uses timeline", "Grant Commute access to your timeline in the Pebble phone app.");
+		}
+	);
 });
 
-function show_config_page(token_account, token_timeline) {
-	console.log("Opened configuration screen on phone");
-	Pebble.openURL("https://commute-pebble.appspot.com/config/" + token_account + "?token_timeline=" + encodeURIComponent(token_timeline));
-}
-
-Pebble.addEventListener("webviewclosed", function(e){
+Pebble.addEventListener("webviewclosed", function(e) {
 	console.log("Saved configuration page");
 	sendConfigChanged();
 });
 
 // Incoming AppMessage -> New request
 Pebble.addEventListener("appmessage", function(e) {
-	if(e.payload.REQUEST_ID > requestId) {
+	if (e.payload.REQUEST_ID > requestId) {
 		console.log("Received new request!");
 		requestId = e.payload.REQUEST_ID;
 		requestOrig = e.payload.REQUEST_ORIG;
@@ -174,18 +155,18 @@ function locationFailure(err) {
  * INTERNET FUNCTIONS
  **************************************************/
 
-var xhrRequest = function (url, type, callback) {
+var xhrRequest = function(url, type, loadCallback, errorCallback) {
 	var xhr = new XMLHttpRequest();
-	xhr.onload = function () {
-		callback(this.responseText, xhr.status);
+	xhr.onload = function() {
+		loadCallback(xhr.status, this.responseText);
 	};
 	xhr.timeout = 10000;
-	xhr.ontimeout = function () {
+	xhr.ontimeout = function() {
 		console.log("AJAX request timed out");
 		sendError(errorInternetTimeout);
 	};
 	xhr.onerror = function() {
-		callback(xhr.status);
+		errorCallback();
 	};
 	xhr.open(type, url);
 	xhr.send();
@@ -197,67 +178,66 @@ function directionsFetch() {
 	// Construct URL
 	var token_account = Pebble.getAccountToken();
 	var token_timeline = localStorage.getItem("token_timeline");
-	var url = gaeBaseUrl + "/directions/" + token_account +
-		"?token_timeline=" + token_timeline +
-		"&request_orig=" + requestOrig +
-		"&request_dest=" + requestDest;
+	var url = gaeBaseUrl +
+		"/directions/" + encodeURIComponent(token_account) +
+		"?token_timeline=" + encodeURIComponent(token_timeline) +
+		"&request_orig=" + encodeURIComponent(requestOrig) +
+		"&request_dest=" + encodeURIComponent(requestDest);
 	if (requestOrig === 0 || requestDest === 0) {
-		url += "&request_coord=" + locationLat + "," + locationLon;
+		url += "&request_coord=" + encodeURIComponent(locationLat) + "," + encodeURIComponent(locationLon);
 	}
 
 	// Perform request, handle response
-	xhrRequest(url, "GET", function(responseText, statusCode) {
-		if(statusCode === 200) {
+	xhrRequest(url, "GET", function(statusCode, responseText) {
+		if (statusCode === 200) {
 			var responseJson = JSON.parse(responseText);
 			if (responseJson.status === "OK") {
-				var via = "via " + responseJson.routes[0].summary;
-				if (via.length > 15) { // Truncate via label
-					via = via.substring(0,12) + "...";
-				} else if (via.length === 4) { // Empty via label
-					via = "";
-				}
-				var response = {
-					"requestId": requestId,
-					"durationNormal": Math.round(responseJson.routes[0].legs[0].duration.value / 60),
-					"durationTraffic": Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60),
-					"via": via
-				};
-				if (response.durationTraffic !== null) {
-					directionsSuccess(response);
+				if (responseJson.routes[0].legs[0].duration_in_traffic !== undefined) {
+					// Directions with traffic data received
+					console.log("Directions received!");
+					var via = "via " + responseJson.routes[0].summary;
+					if (via.length > 15) { // Truncate via label
+						via = via.substring(0,12) + "...";
+					} else if (via.length === 4) { // Empty via label
+						via = "";
+					}
+					var response = {
+						"requestId": requestId,
+						"durationNormal": Math.round(responseJson.routes[0].legs[0].duration.value / 60),
+						"durationTraffic": Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60),
+						"via": via
+					};
+					sendDirections(response.requestId, response.durationNormal, response.durationTraffic, response.via);
 				} else {
+					// No traffic data
 					console.log("Error: no traffic data available");
 					sendError(errorResponseNoTrafficData);
 				}
 			} else if (responseJson.status === "NOT_FOUND") {
 				console.log("Error: address incorrect");
 				sendError(errorResponseAddressIncorrect);
-			} else if(responseJson.status === "ZERO_RESULTS") {
+			} else if (responseJson.status === "ZERO_RESULTS") {
 				console.log("Error: no route between addresses");
 				sendError(errorResponseNoRoute);
 			} else {
 				console.log("Error: received unexpected response from GAE (" + responseJson.status + ")");
 				sendError(errorResponseUnexpected);
 			}
-		} else if(statusCode === 404) {
+		} else if (statusCode === 404) {
 			console.log("Error: app not configured yet");
 			sendError(errorConfigure);
-		} else if(statusCode === 409) {
+		} else if (statusCode === 409) {
 			console.log("Error: app reconfiguration required");
 			sendError(errorReconfigure);
 		} else {
 			console.log("Error: unexpected HTTP status as result (" + statusCode + ")");
-			sendError(errorInternetUnavailable);
+			sendError(errorResponseUnexpected);
 		}
-	}, function(statusCode) {
+	}, function() {
 		// Request error
-		console.log("Error: unexpected error during request (" + statusCode + ")");
+		console.log("Error: network error during request");
 		sendError(errorInternetUnavailable);
 	});
-}
-
-function directionsSuccess(response) {
-	console.log("Directions received!");
-	sendDirections(response.requestId, response.durationNormal, response.durationTraffic, response.via);
 }
 
 

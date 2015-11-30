@@ -7,8 +7,8 @@
  **************************************************/
 
 // Write message to buffer & send
-void send_request() {
-	if(connection_service_peek_pebble_app_connection()) {
+static void send_request() {
+	if (connection_service_peek_pebble_app_connection()) {
 		// Bluetooth connected
 		// Init message
 		DictionaryIterator *iter;
@@ -18,7 +18,7 @@ void send_request() {
 		request_id += 1;
 		RequestType request_orig = -1;
 		RequestType request_dest = -1;
-		switch((Page) page) {
+		switch ((Page) page) {
 			case PAGE_LOCATION_WORK:
 				request_orig = REQUEST_TYPE_LOCATION;
 				request_dest = REQUEST_TYPE_WORK;
@@ -85,11 +85,11 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 	Tuple *tup_response_via = dict_find(received, RESPONSE_VIA);
 	
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
-	int duration_difference;
+	int16_t duration_difference;
 	float delay_ratio;
 	GColor color_background;
 	
-	switch((ResponseType) tup_response_type->value->uint8) {
+	switch ((ResponseType) tup_response_type->value->int8) {
 		case RESPONSE_TYPE_READY:
 			data_layer_data->status = STATUS_LOCATING;
 			color_background = PBL_IF_COLOR_ELSE(GColorDarkGray, GColorBlack);
@@ -105,22 +105,22 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 			break;
 		case RESPONSE_TYPE_DIRECTIONS:
 			// Filter out outdated requests
-			if(request_id == tup_request_id->value->uint8) {
+			if (request_id == tup_request_id->value->int8) {
 				// Calculate delay
-				duration_difference = tup_response_duration_traffic->value->uint16 - tup_response_duration_normal->value->uint16;
-				if(duration_difference < 0) // Set delay to 0 if negative
+				duration_difference = tup_response_duration_traffic->value->int16 - tup_response_duration_normal->value->int16;
+				if (duration_difference < 0) // Set delay to 0 if negative
 					duration_difference = 0;
-				delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->uint16;
+				delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int16;
 				// Update data layer data
 				data_layer_data->status = STATUS_DONE;
-				data_layer_data->duration_current = tup_response_duration_traffic->value->uint16;
+				data_layer_data->duration_current = tup_response_duration_traffic->value->int16;
 				data_layer_data->duration_delay = duration_difference;
 				snprintf(data_layer_data->via, sizeof(data_layer_data->via), "%s", tup_response_via->value->cstring);
 				data_layer_data->mode_delay = false;
 				// Set color
-				if(delay_ratio > 0.25) { // Heavy delay
+				if (delay_ratio > 0.25) { // Heavy delay
 					color_background = PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack);
-				} else if(delay_ratio > 0.1) { // Moderate delay
+				} else if (delay_ratio > 0.1) { // Moderate delay
 					color_background = PBL_IF_COLOR_ELSE(GColorOrange, GColorBlack);
 				} else { // Light delay
 					color_background = PBL_IF_COLOR_ELSE(GColorDarkGreen, GColorBlack);
@@ -128,7 +128,7 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 				window_set_background_color(window, color_background);
 				layer_mark_dirty(window_get_root_layer(window));
 			} else {
-				APP_LOG(APP_LOG_LEVEL_INFO, "Received response for old request, dropping.");
+				APP_LOG(APP_LOG_LEVEL_INFO, "Received response for old request (%d), dropping.", tup_request_id->value->int8);
 			}
 			break;
 		case RESPONSE_TYPE_ERROR:
@@ -183,7 +183,7 @@ static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reas
 // Page icon layer functions
 static void draw_layer_page_icons() {
 	// Draw the correct page icons
-	switch((Page) page) {
+	switch ((Page) page) {
 		case PAGE_LOCATION_WORK:
 			bitmap_layer_set_bitmap(layer_orig, icon_pin);
 			bitmap_layer_set_bitmap(layer_dest, icon_work);
@@ -212,14 +212,14 @@ static void layer_page_icons_load() {
 	
 	// Create icon layers
 	layer_orig = bitmap_layer_create(GRect(0, 0, 20, 20));
-	if(layer_orig == NULL)
+	if (layer_orig == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create origin icon layer");
 	bitmap_layer_set_compositing_mode(layer_orig, GCompOpSet);
 	bitmap_layer_set_alignment(layer_orig, GAlignCenter);
 	layer_add_child(layer_page_icons, bitmap_layer_get_layer(layer_orig));
 	
 	layer_to = bitmap_layer_create(GRect(25, 0, 20, 20));
-	if(layer_to == NULL)
+	if (layer_to == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create to icon layer");
 	bitmap_layer_set_compositing_mode(layer_to, GCompOpSet);
 	bitmap_layer_set_alignment(layer_to, GAlignCenter);
@@ -227,7 +227,7 @@ static void layer_page_icons_load() {
 	layer_add_child(layer_page_icons, bitmap_layer_get_layer(layer_to));
 	
 	layer_dest = bitmap_layer_create(GRect(50, 0, 20, 20));
-	if(layer_dest == NULL)
+	if (layer_dest == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create destination icon layer");
 	bitmap_layer_set_compositing_mode(layer_dest, GCompOpSet);
 	bitmap_layer_set_alignment(layer_dest, GAlignCenter);
@@ -254,7 +254,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
 	
 	// Figure out what to draw
-	switch(data_layer_data->status) {
+	switch ((Status) data_layer_data->status) {
 		case STATUS_CONNECTING:
 			bitmap_layer_set_bitmap(layer_status_icon, icon_loading);
 			layer_set_hidden(bitmap_layer_get_layer(layer_status_icon), false);
@@ -267,7 +267,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 			snprintf(string_caption, sizeof(string_caption), "Loading...");
 			break;
 		case STATUS_DONE:
-			if(data_layer_data->mode_delay) {
+			if (data_layer_data->mode_delay) {
 				// Delay mode
 				snprintf(string_duration, sizeof(string_duration), "%d", data_layer_data->duration_delay);
 				snprintf(string_duration_label, sizeof(string_duration_label), "minute%c delay", (data_layer_data->duration_delay==1) ? ' ' : 's');
@@ -283,7 +283,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 		case STATUS_ERROR:
 			bitmap_layer_set_bitmap(layer_status_icon, icon_error);
 			layer_set_hidden(bitmap_layer_get_layer(layer_status_icon), false);
-			switch((Error) data_layer_data->error) {
+			switch ((Error) data_layer_data->error) {
 				case ERROR_TIMELINE_TOKEN:
 					snprintf(string_caption, sizeof(string_caption), "Enable timeline");
 					break;
@@ -341,21 +341,21 @@ static void layer_data_load() {
 		20
 	);
 	layer_page_icons = layer_create(frame_page_icons);
-	if(layer_page_icons == NULL)
+	if (layer_page_icons == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create page icons layer");
 	layer_set_update_proc(layer_page_icons, draw_layer_page_icons);
 	layer_page_icons_load();
 	layer_add_child(layer_data, layer_page_icons);
 	
 	// Set up duration layer
-	GRect frame_duration = GRect(
+	const GRect frame_duration = GRect(
 		0,
 		(bounds_layer_data.size.h / 2) - 36,
 		bounds_layer_data.size.w,
 		42
 	);
 	layer_duration = text_layer_create(frame_duration);
-	if(layer_duration == NULL)
+	if (layer_duration == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create duration layer");
 	text_layer_set_font(layer_duration, fonts_get_system_font(FONT_KEY_LECO_42_NUMBERS));
 	text_layer_set_text_color(layer_duration, GColorWhite);
@@ -365,14 +365,14 @@ static void layer_data_load() {
 	layer_add_child(layer_data, text_layer_get_layer(layer_duration));
 	
 	// Set up duration label layer
-	GRect frame_duration_label = GRect(
+	const GRect frame_duration_label = GRect(
 		0,
 		(bounds_layer_data.size.h / 2) + 4,
 		bounds_layer_data.size.w,
 		28
 	);
 	layer_duration_label = text_layer_create(frame_duration_label);
-	if(layer_duration_label == NULL)
+	if (layer_duration_label == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create duration label layer");
 	text_layer_set_font(layer_duration_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
 	text_layer_set_text_color(layer_duration_label, GColorWhite);
@@ -382,14 +382,14 @@ static void layer_data_load() {
 	layer_add_child(layer_data, text_layer_get_layer(layer_duration_label));
 	
 	// Set up caption layer
-	GRect frame_caption = GRect(
+	const GRect frame_caption = GRect(
 		0,
 		bounds_layer_data.size.h - 22 - LAYER_PAGE_INDICATOR_MARGIN,
 		bounds_layer_data.size.w,
 		22
 	);
 	layer_caption = text_layer_create(frame_caption);
-	if(layer_caption == NULL)
+	if (layer_caption == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create caption layer");
 	text_layer_set_font(layer_caption, fonts_get_system_font(FONT_KEY_GOTHIC_18));
 	text_layer_set_text_color(layer_caption, GColorWhite);
@@ -399,14 +399,14 @@ static void layer_data_load() {
 	layer_add_child(layer_data, text_layer_get_layer(layer_caption));
 	
 	// Set up status icon layer
-	GRect frame_status_icon = GRect(
+	const GRect frame_status_icon = GRect(
 		(bounds_layer_data.size.w / 2) - 25,
 		(bounds_layer_data.size.h / 2) - 25,
 		50,
 		50
 	);
 	layer_status_icon = bitmap_layer_create(frame_status_icon);
-	if(layer_status_icon == NULL)
+	if (layer_status_icon == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create status icon layer");
 	bitmap_layer_set_compositing_mode(layer_status_icon, GCompOpSet);
 	bitmap_layer_set_alignment(layer_status_icon, GAlignCenter);
@@ -429,7 +429,7 @@ static void layer_data_unload() {
 // Page indicator up layer functions
 static void draw_layer_page_indicator_up() {
 	// Draw the correct page icons
-	if(page == PAGE_LOCATION_WORK) {
+	if (page == PAGE_LOCATION_WORK) {
 		layer_set_hidden(bitmap_layer_get_layer(layer_page_indicator_up_icon), true);
 	} else {
 		layer_set_hidden(bitmap_layer_get_layer(layer_page_indicator_up_icon), false);
@@ -444,14 +444,14 @@ static void layer_page_indicator_up_load() {
 	GRect bounds_layer_page_indicator_up = layer_get_bounds(layer_page_indicator_up);
 	
 	// Create icon layers
-	GRect frame_page_indicator_up_icon = GRect(
+	const GRect frame_page_indicator_up_icon = GRect(
 		0,
 		0,
 		bounds_layer_page_indicator_up.size.w,
 		bounds_layer_page_indicator_up.size.h
 	);
 	layer_page_indicator_up_icon = bitmap_layer_create(frame_page_indicator_up_icon);
-	if(layer_page_indicator_up_icon == NULL)
+	if (layer_page_indicator_up_icon == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create page indicator up icon layer");
 	bitmap_layer_set_compositing_mode(layer_page_indicator_up_icon, GCompOpSet);
 	bitmap_layer_set_alignment(layer_page_indicator_up_icon, GAlignCenter);
@@ -467,7 +467,7 @@ static void layer_page_indicator_up_unload() {
 // Page indicator down layer functions
 static void draw_layer_page_indicator_down() {
 	// Draw the correct page icons
-	if(page == PAGE_WORK_HOME) {
+	if (page == PAGE_WORK_HOME) {
 		layer_set_hidden(bitmap_layer_get_layer(layer_page_indicator_down_icon), true);
 	} else {
 		layer_set_hidden(bitmap_layer_get_layer(layer_page_indicator_down_icon), false);
@@ -482,14 +482,14 @@ static void layer_page_indicator_down_load() {
 	GRect bounds_layer_page_indicator_down = layer_get_bounds(layer_page_indicator_down);
 	
 	// Create icon layers
-	GRect frame_page_indicator_down_icon = GRect(
+	const GRect frame_page_indicator_down_icon = GRect(
 		0,
 		0,
 		bounds_layer_page_indicator_down.size.w,
 		bounds_layer_page_indicator_down.size.h
 	);
 	layer_page_indicator_down_icon = bitmap_layer_create(frame_page_indicator_down_icon);
-	if(layer_page_indicator_down_icon == NULL)
+	if (layer_page_indicator_down_icon == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create page indicator down icon layer");
 	bitmap_layer_set_compositing_mode(layer_page_indicator_down_icon, GCompOpSet);
 	bitmap_layer_set_alignment(layer_page_indicator_down_icon, GAlignCenter);
@@ -509,11 +509,11 @@ static void window_load(Window *window) {
 	
 	// Set up status bar layer
 	status_bar_layer = status_bar_layer_create();
-	if(status_bar_layer == NULL)
+	if (status_bar_layer == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create status bar layer");
-	layer_add_child(layer_window, status_bar_layer_get_layer(status_bar_layer));
 	status_bar_layer_set_colors(status_bar_layer, GColorClear, GColorWhite);
 	status_bar_layer_set_separator_mode(status_bar_layer, StatusBarLayerSeparatorModeDotted);
+	layer_add_child(layer_window, status_bar_layer_get_layer(status_bar_layer));
 	
 	// Set up data layer
 	const GRect frame_data = GRect(
@@ -523,10 +523,10 @@ static void window_load(Window *window) {
 		bounds_window.size.h - STATUS_BAR_LAYER_HEIGHT - 2 * LAYER_PAGE_INDICATOR_HEIGHT - LAYER_PAGE_INDICATOR_MARGIN
 	);
 	layer_data = layer_create_with_data(frame_data, sizeof(DataLayerData));
-	if(layer_data == NULL)
+	if (layer_data == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create data layer");
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
-	if(connection_service_peek_pebble_app_connection()) {
+	if (connection_service_peek_pebble_app_connection()) {
 		// Bluetooth connected
 		data_layer_data->status = STATUS_CONNECTING;
 	} else {
@@ -536,7 +536,6 @@ static void window_load(Window *window) {
 		GColor color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
 		window_set_background_color(window, color_background);
 	}
-	//layer_set_clips(layer_data, false);
 	layer_set_update_proc(layer_data, draw_layer_data);
 	layer_data_load();
 	layer_add_child(layer_window, layer_data);
@@ -549,7 +548,7 @@ static void window_load(Window *window) {
 		LAYER_PAGE_INDICATOR_HEIGHT
 	);
 	layer_page_indicator_up = layer_create(frame_page_indicator_up);
-	if(layer_page_indicator_up == NULL)
+	if (layer_page_indicator_up == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create page indicator up layer");
 	layer_set_update_proc(layer_page_indicator_up, draw_layer_page_indicator_up);
 	layer_page_indicator_up_load();
@@ -563,7 +562,7 @@ static void window_load(Window *window) {
 		LAYER_PAGE_INDICATOR_HEIGHT
 	);
 	layer_page_indicator_down = layer_create(frame_page_indicator_down);
-	if(layer_page_indicator_down == NULL)
+	if (layer_page_indicator_down == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create page indicator down layer");
 	layer_set_update_proc(layer_page_indicator_down, draw_layer_page_indicator_down);
 	layer_page_indicator_down_load();
@@ -588,7 +587,7 @@ static void window_unload(Window *window) {
  **************************************************/
 
 static void click_handler_up(ClickRecognizerRef recognizer, void *context) {
-	if(page > PAGE_LOCATION_WORK) {
+	if (page > PAGE_LOCATION_WORK) {
 		page -= 1;
 		refresh_data();
 	}
@@ -596,7 +595,7 @@ static void click_handler_up(ClickRecognizerRef recognizer, void *context) {
 
 static void click_handler_select(ClickRecognizerRef recognizer, void *context) {
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
-	if(data_layer_data->status == STATUS_DONE) {
+	if (data_layer_data->status == STATUS_DONE) {
 		data_layer_data->mode_delay = !data_layer_data->mode_delay;
 		layer_mark_dirty(window_get_root_layer(window));
 	} else {
@@ -606,7 +605,7 @@ static void click_handler_select(ClickRecognizerRef recognizer, void *context) {
 }
 
 static void click_handler_down(ClickRecognizerRef recognizer, void *context) {
-	if(page < PAGE_WORK_HOME) {
+	if (page < PAGE_WORK_HOME) {
 		page += 1;
 		refresh_data();
 	}
@@ -629,14 +628,14 @@ static void init(void) {
 	char am_pm[3];
 	time_t now = time(NULL);
 	strftime(am_pm, sizeof(am_pm), "%p", localtime(&now));
-	if(strcmp(am_pm, "AM") == 0)
+	if (strcmp(am_pm, "AM") == 0)
 		page = PAGE_LOCATION_WORK;
 	else
 		page = PAGE_LOCATION_HOME;
 	
 	// Create window
 	window = window_create();
-	if(window == NULL)
+	if (window == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create window");
 	GColor color_background = PBL_IF_COLOR_ELSE(GColorDarkGray, GColorBlack);
 	window_set_background_color(window, color_background);
@@ -661,7 +660,7 @@ static void deinit(void) {
 	window_destroy(window);
 }
 
-int main( void ) {
+int main(void) {
 	init();
 	app_event_loop();
 	deinit();
