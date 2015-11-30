@@ -9,6 +9,12 @@
  * DEFINES
  **************************************************/
 
+# define DEBUG
+
+#define DURATION_BYTE_LENGTH 5
+#define DURATION_LABEL_BYTE_LENGTH 14
+#define CAPTION_BYTE_LENGTH 49 // For 15 characters: 4 byte ("via ") + 11*4 byte (random UTF-8) + 1 byte ('\0') = 49 byte
+
 #define LAYER_PAGE_INDICATOR_HEIGHT 16
 #define LAYER_PAGE_INDICATOR_MARGIN 4
 
@@ -39,7 +45,8 @@ typedef enum {
 	RESPONSE_TYPE = 3,
 	RESPONSE_ERROR = 4,
 	RESPONSE_DURATION_NORMAL = 5,
-	RESPONSE_DURATION_TRAFFIC = 6
+	RESPONSE_DURATION_TRAFFIC = 6,
+	RESPONSE_VIA = 7
 } AppMessageTupleType;
 
 typedef enum {
@@ -53,7 +60,8 @@ typedef enum {
 	ERROR_RESPONSE_NO_ROUTE = 7,
 	ERROR_CONFIGURE = 8,
 	ERROR_RECONFIGURE = 9,
-	ERROR_BLUETOOTH = 10
+	ERROR_BLUETOOTH_DISCONNECTED = 10,
+	ERROR_BLUETOOTH_TRANSMISSION = 11
 } Error;
 
 typedef enum {
@@ -74,8 +82,10 @@ typedef enum {
 typedef struct {
 	Status status;
 	Error error;
-	int duration_current;
-	int duration_delay;
+	bool mode_delay;
+	int16_t duration_current;
+	int16_t duration_delay;
+	char via[CAPTION_BYTE_LENGTH];
 } DataLayerData;
 
 
@@ -89,11 +99,11 @@ int request_id = -1; // Keep track of newest request
 
 Window *window;
 
-// Children of root layer
+// Children of root (window) layer
 StatusBarLayer *status_bar_layer;
+Layer *layer_data;
 Layer *layer_page_indicator_up;
 Layer *layer_page_indicator_down;
-Layer *layer_data;
 
 // Children of data layer
 Layer *layer_page_icons;
@@ -103,9 +113,9 @@ TextLayer *layer_caption;
 BitmapLayer *layer_status_icon;
 GBitmap *icon_loading;
 GBitmap *icon_error;
-char string_duration[4];
-char string_duration_label[8];
-char string_caption[20];
+char string_duration[DURATION_BYTE_LENGTH];
+char string_duration_label[DURATION_LABEL_BYTE_LENGTH];
+char string_caption[CAPTION_BYTE_LENGTH];
 
 // Children of page icon layer
 BitmapLayer *layer_orig;
