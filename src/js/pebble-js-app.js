@@ -1,3 +1,5 @@
+var ready = false;
+
 var locationLat;
 var locationLon;
 var locationFound = false;
@@ -72,6 +74,7 @@ Pebble.addEventListener("ready", function(e) {
 		function(token) { // Success
 			console.log("Saving timeline token: " + token);
 			localStorage.setItem("token_timeline", token);
+			ready = true;
 			sendReady();
 			locationFetch();
 		}, function(error) { // Failure
@@ -83,19 +86,20 @@ Pebble.addEventListener("ready", function(e) {
 
 // Open configuration page
 Pebble.addEventListener("showConfiguration", function(e) {
-	Pebble.getTimelineToken(
-		function(token_timeline) { // Success
-			console.log("Saving timeline token: " + token_timeline);
-			localStorage.setItem("token_timeline", token_timeline);
-			
-			console.log("Opened configuration screen on phone");
-			Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(Pebble.getAccountToken()) + "?token_timeline=" + encodeURIComponent(token_timeline));
-		}, function(error) { // Failure
-			console.log("Error opening configuration screen, can't get timeline token: " + error);
-			Pebble.showSimpleNotificationOnPebble("Commute uses timeline", "Grant Commute access to your timeline in the Pebble phone app.");
-		}
-	);
+	showConfiguration();
 });
+
+function showConfiguration() {
+	var token_account = Pebble.getAccountToken();
+	var token_timeline = localStorage.getItem("token_timeline");
+	
+	if (ready) {
+		console.log("Opened configuration screen on phone");
+		Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(token_account) + "?token_timeline=" + encodeURIComponent(token_timeline));
+	} else {
+		setTimeout(function() { showConfiguration(); }, 100);
+	}
+}
 
 Pebble.addEventListener("webviewclosed", function(e) {
 	console.log("Saved configuration page");
