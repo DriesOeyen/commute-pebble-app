@@ -10,7 +10,7 @@ var locationOptions = {
 	timeout: 10000
 };
 
-var requestId = -1;
+var requestIdLatest = -1;
 var requestOrig;
 var requestDest;
 var requestReceived = false;
@@ -108,16 +108,16 @@ Pebble.addEventListener("webviewclosed", function(e) {
 
 // Incoming AppMessage -> New request
 Pebble.addEventListener("appmessage", function(e) {
-	if (e.payload.REQUEST_ID > requestId) {
+	if (e.payload.REQUEST_ID > requestIdLatest) {
 		console.log("Received new request!");
-		requestId = e.payload.REQUEST_ID;
+		requestIdLatest = e.payload.REQUEST_ID;
 		requestOrig = e.payload.REQUEST_ORIG;
 		requestDest = e.payload.REQUEST_DEST;
 		requestReceived = true;
 		if (locationError) {
 			sendError(errorLocation);
 		} else if (locationFound) {
-			directionsFetch();
+			directionsFetch(e.payload.REQUEST_ID);
 		}
 	} else {
 		console.log("Received outdated request, dropping");
@@ -143,7 +143,7 @@ function locationSuccess(pos) {
 	locationLon = pos.coords.longitude;
 	locationFound = true;
 	if (requestReceived) {
-		directionsFetch();
+		directionsFetch(requestIdLatest);
 	}
 }
 
@@ -176,7 +176,7 @@ var xhrRequest = function(url, type, loadCallback, errorCallback) {
 	xhr.send();
 };
 
-function directionsFetch() {
+function directionsFetch(requestId) {
 	console.log("Fetching directions from " + requestOrig + " to " + requestDest + " (request ID: " + requestId + ")");
 
 	// Construct URL
@@ -199,19 +199,15 @@ function directionsFetch() {
 				if (responseJson.routes[0].legs[0].duration_in_traffic !== undefined) {
 					// Directions with traffic data received
 					console.log("Directions received!");
+					var durationNormal = Math.round(responseJson.routes[0].legs[0].duration.value / 60)
+					var durationTraffic = Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60)
 					var via = "via " + responseJson.routes[0].summary;
 					if (via.length > 15) { // Truncate via label
 						via = via.substring(0,12) + "...";
 					} else if (via.length === 4) { // Empty via label
 						via = "";
 					}
-					var response = {
-						"requestId": requestId,
-						"durationNormal": Math.round(responseJson.routes[0].legs[0].duration.value / 60),
-						"durationTraffic": Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60),
-						"via": via
-					};
-					sendDirections(response.requestId, response.durationNormal, response.durationTraffic, response.via);
+					sendDirections(requestId, durationNormal, durationTraffic, via);
 				} else {
 					// No traffic data
 					console.log("Error: no traffic data available");
@@ -296,6 +292,6 @@ function sendAppMessage(dictionary, description) {
 		console.log("Pebble ACK (" + description + "), transactionId=" + e.data.transactionId);
 	}, function(e){
 		// Pebble NACK
-		console.log("Pebble NACK (" + description + "), transactionId=" + e.data.transactionId + ", error: " + e.error.message);
+		console.log("Pebble NACK (" + description + "), transactionId=" + e.data.transactionId);
 	});
 }
