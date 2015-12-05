@@ -10,10 +10,6 @@
 static void send_request() {
 	if (connection_service_peek_pebble_app_connection()) {
 		// Bluetooth connected
-		// Init message
-		DictionaryIterator *iter;
-		app_message_outbox_begin(&iter);
-
 		// Prepare data
 		request_id += 1;
 		RequestType request_orig = -1;
@@ -36,17 +32,19 @@ static void send_request() {
 				request_dest = REQUEST_TYPE_HOME;
 				break;
 		}
-
-		// Put data in tuples
-		Tuplet tup_request_id = TupletInteger(REQUEST_ID, request_id);
-		Tuplet tup_request_orig = TupletInteger(REQUEST_ORIG, request_orig);
-		Tuplet tup_request_dest = TupletInteger(REQUEST_DEST, request_dest);
-
+		
+		// Init message
+		DictionaryIterator *iter;
+		int result = app_message_outbox_begin(&iter);
+		if (result != APP_MSG_OK)
+			APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't initialize AppMessage outbox dictionary (error: %d)", result);
+		
 		// Put tuples in dictionary
-		dict_write_tuplet(iter, &tup_request_id);
-		dict_write_tuplet(iter, &tup_request_orig);
-		dict_write_tuplet(iter, &tup_request_dest);
-
+		dict_write_int8(iter, REQUEST_ID, request_id);
+		dict_write_int8(iter, REQUEST_ORIG, request_orig);
+		dict_write_int8(iter, REQUEST_DEST, request_dest);
+		dict_write_end(iter);
+		
 		// Send message
 		app_message_outbox_send();
 	} else {
@@ -652,7 +650,9 @@ static void init(void) {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 	
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	int size_buffer_in = dict_calc_buffer_size(5, sizeof(int32_t), sizeof(int32_t), sizeof(int32_t), CAPTION_BYTE_LENGTH, sizeof(int32_t));
+	int size_buffer_out = dict_calc_buffer_size(3, sizeof(int8_t), sizeof(int8_t), sizeof(int8_t));
+	app_message_open(size_buffer_in, size_buffer_out);
 }
 
 static void deinit(void) {
