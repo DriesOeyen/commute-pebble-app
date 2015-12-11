@@ -108,7 +108,10 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 				duration_difference = tup_response_duration_traffic->value->int16 - tup_response_duration_normal->value->int16;
 				if (duration_difference < 0) // Set delay to 0 if negative
 					duration_difference = 0;
-				delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int16;
+				if (duration_normal == 0) // Prevent division by 0
+					delay_ratio = 0f;
+				else
+					delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int16;
 				// Update data layer data
 				data_layer_data->status = STATUS_DONE;
 				data_layer_data->duration_current = tup_response_duration_traffic->value->int16;
