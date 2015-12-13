@@ -19,6 +19,13 @@
     "resources": {
         "media": [
             {
+                "file": "images/IconMenu.png",
+                "memoryFormat": "1Bit",
+                "menuIcon": true,
+                "name": "IMAGE_ICON_MENU",
+                "type": "bitmap"
+            },
+            {
                 "file": "images/Loading.png",
                 "name": "IMAGE_LOADING",
                 "type": "bitmap"
