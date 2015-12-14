@@ -47,118 +47,57 @@ var gaeBaseUrl = "https://commute-pebble.appspot.com";
 
 
 /**************************************************
- * REGISTER APP CALLBACKS
+ * APPMESSAGE FUNCTIONS
  **************************************************/
 
-// Opened app and PebbleKit JS ready
-Pebble.addEventListener("ready", function() {
-	console.log("PebbleKit JS is ready!");
-
-	// Check storage version
-	var storage_version_current = parseInt(localStorage.getItem("storage_version"));
-	if (isNaN(storage_version_current)) {
-		storage_version_current = 0;
-	}
-
-	// Upgrade storage if necessary
-	if (storage_version_current < storageVersionLatest) {
-		switch(storage_version_current) {
-			case(0): // Upgrade new users
-				localStorage.setItem("storage_version", storageVersionLatest);
-				break;
-			default: // Upgrade outdated version
-				localStorage.clear();
-				localStorage.setItem("storage_version", storageVersionLatest);
-		}
-	}
-
-	// Get timeline token
-	Pebble.getTimelineToken(
-		function(token) { // Success
-			token_timeline = token;
-			localStorage.setItem("token_timeline", token_timeline);
-			console.log("Saving timeline token: " + token_timeline);
-			ready = true;
-			sendReady();
-			locationFetch();
-		}, function(error) { // Failure
-			token_timeline = localStorage.getItem("token_timeline");
-			if (token_timeline === null) {
-				token_timeline = "";
-			}
-			console.log("Error getting timeline token (" + error + "), using old token: " + token_timeline);
-			ready = true;
-			sendReady();
-			locationFetch();
-		}
-	);
-});
-
-// Open configuration page
-Pebble.addEventListener("showConfiguration", function() {
-	showConfiguration();
-});
-
-function showConfiguration() {
-	if (ready) {
-		var token_account = Pebble.getAccountToken();
-		console.log("Opened configuration screen on phone");
-		Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(token_account) + "?token_timeline=" + encodeURIComponent(token_timeline));
-	} else {
-		setTimeout(function() { showConfiguration(); }, 100);
-	}
+function sendAppMessage(dictionary, description) {
+	Pebble.sendAppMessage(dictionary, function(e){
+		// Pebble ACK
+		console.log("Pebble ACK (" + description + "), transactionId=" + e.data.transactionId);
+	}, function(e){
+		// Pebble NACK
+		console.log("Pebble NACK (" + description + "), transactionId=" + e.data.transactionId);
+	});
 }
 
-Pebble.addEventListener("webviewclosed", function() {
-	console.log("Saved configuration page");
-	sendConfigChanged();
-});
-
-// Incoming AppMessage -> New request
-Pebble.addEventListener("appmessage", function(e) {
-	if (e.payload.REQUEST_ID > requestIdLatest) {
-		console.log("Received new request!");
-		requestIdLatest = e.payload.REQUEST_ID;
-		requestOrig = e.payload.REQUEST_ORIG;
-		requestDest = e.payload.REQUEST_DEST;
-		requestReceived = true;
-		if (locationError) {
-			sendError(errorLocation);
-		} else if (locationFound) {
-			directionsFetch(e.payload.REQUEST_ID);
-		}
-	} else {
-		console.log("Received outdated request, dropping");
-	}
-});
-
-
-
-/**************************************************
- * LOCATION FUNCTIONS
- **************************************************/
-
-function locationFetch() {
-	console.log("Fetching location...");
-	navigator.geolocation.getCurrentPosition(locationSuccess, locationFailure, locationOptions);
+function sendReady() {
+	var dictionary = {
+		"RESPONSE_TYPE": responseTypeReady
+	};
+	sendAppMessage(dictionary, "ready");
 }
 
-function locationSuccess(pos) {
-	console.log("Location found!");
-	sendLocated();
-
-	locationLat = pos.coords.latitude;
-	locationLon = pos.coords.longitude;
-	locationFound = true;
-	if (requestReceived) {
-		directionsFetch(requestIdLatest);
-	}
+function sendLocated() {
+	var dictionary = {
+		"RESPONSE_TYPE": responseTypeLocated
+	};
+	sendAppMessage(dictionary, "located");
 }
 
-function locationFailure(err) {
-	console.log("Location error (" + err.code + "): " + err.message);
-	locationError = true;
-	sendError(errorLocation);
+function sendDirections(requestId, durationNormal, durationTraffic, via) {
+	var dictionary = {
+		"RESPONSE_TYPE": responseTypeDirections,
+		"RESPONSE_DURATION_NORMAL": durationNormal,
+		"RESPONSE_DURATION_TRAFFIC": durationTraffic,
+		"RESPONSE_VIA": via,
+		"REQUEST_ID": requestId
+	};
+	sendAppMessage(dictionary, "directions");
+}
+
+function sendError(error) {
+	var dictionary = {
+		"RESPONSE_TYPE": responseTypeError,
+		"RESPONSE_ERROR": error
+	};
+	sendAppMessage(dictionary, "error");
+}
+
+function sendConfigChanged() {
+	var dictionary = {
+		"RESPONSE_TYPE": responseTypeConfigChanged
+	};
+	sendAppMessage(dictionary, "config changed");
 }
 
 
@@ -250,55 +189,116 @@ function directionsFetch(requestId) {
 
 
 /**************************************************
- * APPMESSAGE FUNCTIONS
+ * LOCATION FUNCTIONS
  **************************************************/
 
-function sendReady() {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeReady
-	};
-	sendAppMessage(dictionary, "ready");
+function locationSuccess(pos) {
+	console.log("Location found!");
+	sendLocated();
+
+	locationLat = pos.coords.latitude;
+	locationLon = pos.coords.longitude;
+	locationFound = true;
+	if (requestReceived) {
+		directionsFetch(requestIdLatest);
+	}
 }
 
-function sendLocated() {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeLocated
-	};
-	sendAppMessage(dictionary, "located");
+function locationFailure(err) {
+	console.log("Location error (" + err.code + "): " + err.message);
+	locationError = true;
+	sendError(errorLocation);
 }
 
-function sendDirections(requestId, durationNormal, durationTraffic, via) {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeDirections,
-		"RESPONSE_DURATION_NORMAL": durationNormal,
-		"RESPONSE_DURATION_TRAFFIC": durationTraffic,
-		"RESPONSE_VIA": via,
-		"REQUEST_ID": requestId
-	};
-	sendAppMessage(dictionary, "directions");
+function locationFetch() {
+	console.log("Fetching location...");
+	navigator.geolocation.getCurrentPosition(locationSuccess, locationFailure, locationOptions);
 }
 
-function sendError(error) {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeError,
-		"RESPONSE_ERROR": error
-	};
-	sendAppMessage(dictionary, "error");
+
+
+/**************************************************
+ * REGISTER APP CALLBACKS
+ **************************************************/
+
+// Opened app and PebbleKit JS ready
+Pebble.addEventListener("ready", function() {
+	console.log("PebbleKit JS is ready!");
+
+	// Check storage version
+	var storage_version_current = parseInt(localStorage.getItem("storage_version"));
+	if (isNaN(storage_version_current)) {
+		storage_version_current = 0;
+	}
+
+	// Upgrade storage if necessary
+	if (storage_version_current < storageVersionLatest) {
+		switch(storage_version_current) {
+			case(0): // Upgrade new users
+				localStorage.setItem("storage_version", storageVersionLatest);
+				break;
+			default: // Upgrade outdated version
+				localStorage.clear();
+				localStorage.setItem("storage_version", storageVersionLatest);
+		}
+	}
+
+	// Get timeline token
+	Pebble.getTimelineToken(
+		function(token) { // Success
+			token_timeline = token;
+			localStorage.setItem("token_timeline", token_timeline);
+			console.log("Saving timeline token: " + token_timeline);
+			ready = true;
+			sendReady();
+			locationFetch();
+		}, function(error) { // Failure
+			token_timeline = localStorage.getItem("token_timeline");
+			if (token_timeline === null) {
+				token_timeline = "";
+			}
+			console.log("Error getting timeline token (" + error + "), using old token: " + token_timeline);
+			ready = true;
+			sendReady();
+			locationFetch();
+		}
+	);
+});
+
+// Open configuration page
+function showConfiguration() {
+	if (ready) {
+		var token_account = Pebble.getAccountToken();
+		console.log("Opened configuration screen on phone");
+		Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(token_account) + "?token_timeline=" + encodeURIComponent(token_timeline));
+	} else {
+		setTimeout(function() { showConfiguration(); }, 100);
+	}
 }
 
-function sendConfigChanged() {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeConfigChanged
-	};
-	sendAppMessage(dictionary, "config changed");
-}
+Pebble.addEventListener("showConfiguration", function() {
+	showConfiguration();
+});
 
-function sendAppMessage(dictionary, description) {
-	Pebble.sendAppMessage(dictionary, function(e){
-		// Pebble ACK
-		console.log("Pebble ACK (" + description + "), transactionId=" + e.data.transactionId);
-	}, function(e){
-		// Pebble NACK
-		console.log("Pebble NACK (" + description + "), transactionId=" + e.data.transactionId);
-	});
-}
+Pebble.addEventListener("webviewclosed", function() {
+	console.log("Saved configuration page");
+	sendConfigChanged();
+});
+
+// Incoming AppMessage -> New request
+Pebble.addEventListener("appmessage", function(e) {
+	if (e.payload.REQUEST_ID > requestIdLatest) {
+		console.log("Received new request!");
+		requestIdLatest = e.payload.REQUEST_ID;
+		requestOrig = e.payload.REQUEST_ORIG;
+		requestDest = e.payload.REQUEST_DEST;
+		requestReceived = true;
+		if (locationError) {
+			sendError(errorLocation);
+		} else if (locationFound) {
+			directionsFetch(e.payload.REQUEST_ID);
+		}
+	} else {
+		console.log("Received outdated request, dropping");
+	}
+});
