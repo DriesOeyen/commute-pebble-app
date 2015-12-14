@@ -1,3 +1,5 @@
+/* global Pebble:true, console:true */
+
 var ready = false;
 var token_timeline = "";
 
@@ -49,7 +51,7 @@ var gaeBaseUrl = "https://commute-pebble.appspot.com";
  **************************************************/
 
 // Opened app and PebbleKit JS ready
-Pebble.addEventListener("ready", function(e) {
+Pebble.addEventListener("ready", function() {
 	console.log("PebbleKit JS is ready!");
 
 	// Check storage version
@@ -93,7 +95,7 @@ Pebble.addEventListener("ready", function(e) {
 });
 
 // Open configuration page
-Pebble.addEventListener("showConfiguration", function(e) {
+Pebble.addEventListener("showConfiguration", function() {
 	showConfiguration();
 });
 
@@ -107,7 +109,7 @@ function showConfiguration() {
 	}
 }
 
-Pebble.addEventListener("webviewclosed", function(e) {
+Pebble.addEventListener("webviewclosed", function() {
 	console.log("Saved configuration page");
 	sendConfigChanged();
 });
@@ -204,8 +206,8 @@ function directionsFetch(requestId) {
 				if (responseJson.routes[0].legs[0].duration_in_traffic !== undefined) {
 					// Directions with traffic data received
 					console.log("Directions received!");
-					var durationNormal = Math.round(responseJson.routes[0].legs[0].duration.value / 60)
-					var durationTraffic = Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60)
+					var durationNormal = Math.round(responseJson.routes[0].legs[0].duration.value / 60);
+					var durationTraffic = Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60);
 					var via = "via " + responseJson.routes[0].summary;
 					if (via.length > 15) { // Truncate via label
 						via = via.substring(0,12) + "...";
