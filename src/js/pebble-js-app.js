@@ -1,4 +1,5 @@
 var ready = false;
+var token_timeline = "";
 
 var locationLat;
 var locationLon;
@@ -21,7 +22,7 @@ var responseTypeDirections = 2;
 var responseTypeError = 3;
 var responseTypeConfigChanged = 4;
 
-var errorTimelineToken = 0;
+//var errorTimelineToken = 0;
 var errorLocation = 1;
 var errorInternetTimeout = 2;
 var errorInternetUnavailable = 3;
@@ -72,14 +73,21 @@ Pebble.addEventListener("ready", function(e) {
 	// Get timeline token
 	Pebble.getTimelineToken(
 		function(token) { // Success
-			console.log("Saving timeline token: " + token);
-			localStorage.setItem("token_timeline", token);
+			token_timeline = token;
+			localStorage.setItem("token_timeline", token_timeline);
+			console.log("Saving timeline token: " + token_timeline);
 			ready = true;
 			sendReady();
 			locationFetch();
 		}, function(error) { // Failure
-			console.log("Error getting timeline token: " + error);
-			sendError(errorTimelineToken);
+			token_timeline = localStorage.getItem("token_timeline");
+			if (token_timeline === null) {
+				token_timeline = "";
+			}
+			console.log("Error getting timeline token (" + error + "), using old token: " + token_timeline);
+			ready = true;
+			sendReady();
+			locationFetch();
 		}
 	);
 });
@@ -90,10 +98,8 @@ Pebble.addEventListener("showConfiguration", function(e) {
 });
 
 function showConfiguration() {
-	var token_account = Pebble.getAccountToken();
-	var token_timeline = localStorage.getItem("token_timeline");
-	
 	if (ready) {
+		var token_account = Pebble.getAccountToken();
 		console.log("Opened configuration screen on phone");
 		Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(token_account) + "?token_timeline=" + encodeURIComponent(token_timeline));
 	} else {
@@ -181,7 +187,6 @@ function directionsFetch(requestId) {
 
 	// Construct URL
 	var token_account = Pebble.getAccountToken();
-	var token_timeline = localStorage.getItem("token_timeline");
 	var url = gaeBaseUrl +
 		"/directions/" + encodeURIComponent(token_account) +
 		"?token_timeline=" + encodeURIComponent(token_timeline) +
