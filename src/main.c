@@ -626,13 +626,19 @@ static void click_config_provider(void *context) {
 
 static void init(void) {
 	// Determine the initial page
-	char am_pm[3];
-	time_t now = time(NULL);
-	strftime(am_pm, sizeof(am_pm), "%p", localtime(&now));
-	if (strcmp(am_pm, "AM") == 0)
-		page = PAGE_LOCATION_WORK;
-	else
-		page = PAGE_LOCATION_HOME;
+	if (launch_reason() == APP_LAUNCH_TIMELINE_ACTION) {
+		// App launched from timeline pin, load relevant page
+		page = (Page) launch_get_args();
+	} else {
+		// Normal app launch, pick page based on time of day
+		char am_pm[3];
+		time_t now = time(NULL);
+		strftime(am_pm, sizeof(am_pm), "%p", localtime(&now));
+		if (strcmp(am_pm, "AM") == 0)
+			page = PAGE_LOCATION_WORK;
+		else
+			page = PAGE_LOCATION_HOME;
+	}
 	
 	// Create window
 	window = window_create();
