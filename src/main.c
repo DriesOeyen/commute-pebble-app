@@ -10,10 +10,6 @@
 static void send_request() {
 	if (connection_service_peek_pebble_app_connection()) {
 		// Bluetooth connected
-		// Init message
-		DictionaryIterator *iter;
-		app_message_outbox_begin(&iter);
-
 		// Prepare data
 		request_id += 1;
 		RequestType request_orig = -1;
@@ -36,17 +32,19 @@ static void send_request() {
 				request_dest = REQUEST_TYPE_HOME;
 				break;
 		}
-
-		// Put data in tuples
-		Tuplet tup_request_id = TupletInteger(REQUEST_ID, request_id);
-		Tuplet tup_request_orig = TupletInteger(REQUEST_ORIG, request_orig);
-		Tuplet tup_request_dest = TupletInteger(REQUEST_DEST, request_dest);
-
+		
+		// Init message
+		DictionaryIterator *iter;
+		int result = app_message_outbox_begin(&iter);
+		if (result != APP_MSG_OK)
+			APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't initialize AppMessage outbox dictionary (error: %d)", result);
+		
 		// Put tuples in dictionary
-		dict_write_tuplet(iter, &tup_request_id);
-		dict_write_tuplet(iter, &tup_request_orig);
-		dict_write_tuplet(iter, &tup_request_dest);
-
+		dict_write_int8(iter, REQUEST_ID, request_id);
+		dict_write_int8(iter, REQUEST_ORIG, request_orig);
+		dict_write_int8(iter, REQUEST_DEST, request_dest);
+		dict_write_end(iter);
+		
 		// Send message
 		app_message_outbox_send();
 	} else {
@@ -110,7 +108,10 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 				duration_difference = tup_response_duration_traffic->value->int16 - tup_response_duration_normal->value->int16;
 				if (duration_difference < 0) // Set delay to 0 if negative
 					duration_difference = 0;
-				delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int16;
+				if (tup_response_duration_normal->value->int16 == 0) // Prevent division by 0
+					delay_ratio = 0;
+				else
+					delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int16;
 				// Update data layer data
 				data_layer_data->status = STATUS_DONE;
 				data_layer_data->duration_current = tup_response_duration_traffic->value->int16;
@@ -625,13 +626,19 @@ static void click_config_provider(void *context) {
 
 static void init(void) {
 	// Determine the initial page
-	char am_pm[3];
-	time_t now = time(NULL);
-	strftime(am_pm, sizeof(am_pm), "%p", localtime(&now));
-	if (strcmp(am_pm, "AM") == 0)
-		page = PAGE_LOCATION_WORK;
-	else
-		page = PAGE_LOCATION_HOME;
+	if (launch_reason() == APP_LAUNCH_TIMELINE_ACTION) {
+		// App launched from timeline pin, load relevant page
+		page = (Page) launch_get_args();
+	} else {
+		// Normal app launch, pick page based on time of day
+		char am_pm[3];
+		time_t now = time(NULL);
+		strftime(am_pm, sizeof(am_pm), "%p", localtime(&now));
+		if (strcmp(am_pm, "AM") == 0)
+			page = PAGE_LOCATION_WORK;
+		else
+			page = PAGE_LOCATION_HOME;
+	}
 	
 	// Create window
 	window = window_create();
@@ -652,7 +659,9 @@ static void init(void) {
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
 	
-	app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+	int size_buffer_in = dict_calc_buffer_size(5, sizeof(int32_t), sizeof(int32_t), sizeof(int32_t), CAPTION_BYTE_LENGTH, sizeof(int32_t));
+	int size_buffer_out = dict_calc_buffer_size(3, sizeof(int8_t), sizeof(int8_t), sizeof(int8_t));
+	app_message_open(size_buffer_in, size_buffer_out);
 }
 
 static void deinit(void) {

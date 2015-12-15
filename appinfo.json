@@ -1,12 +1,12 @@
 {
     "appKeys": {
-        "REQUEST_DEST": 2,
         "REQUEST_ID": 0,
         "REQUEST_ORIG": 1,
+        "REQUEST_DEST": 2,
+        "RESPONSE_TYPE": 3,
+        "RESPONSE_ERROR": 4,
         "RESPONSE_DURATION_NORMAL": 5,
         "RESPONSE_DURATION_TRAFFIC": 6,
-        "RESPONSE_ERROR": 4,
-        "RESPONSE_TYPE": 3,
         "RESPONSE_VIA": 7
     },
     "capabilities": [
@@ -19,55 +19,63 @@
     "resources": {
         "media": [
             {
+                "file": "images/IconMenu.png",
+                "memoryFormat": "1Bit",
+                "menuIcon": true,
+                "name": "IMAGE_ICON_MENU",
+                "type": "bitmap"
+            },
+            {
                 "file": "images/Loading.png",
                 "name": "IMAGE_LOADING",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Error.png",
                 "name": "IMAGE_ERROR",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Down.png",
                 "name": "IMAGE_DOWN",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Up.png",
                 "name": "IMAGE_UP",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Arrow.png",
                 "name": "IMAGE_ARROW",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Work.png",
                 "name": "IMAGE_WORK",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Home.png",
                 "name": "IMAGE_HOME",
-                "type": "png"
+                "type": "bitmap"
             },
             {
                 "file": "images/Pin.png",
                 "name": "IMAGE_PIN",
-                "type": "png"
+                "type": "bitmap"
             }
         ]
     },
     "sdkVersion": "3",
     "shortName": "Commute",
     "targetPlatforms": [
+	    "aplite",
         "basalt",
         "chalk"
     ],
     "uuid": "ae5e3925-781e-41b5-b5c0-50f2984fc5ed",
-    "versionLabel": "1.2",
+    "versionLabel": "1.3",
     "watchapp": {
         "watchface": false
     }
