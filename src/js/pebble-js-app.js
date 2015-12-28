@@ -1,6 +1,5 @@
 /* global Pebble:true, console:true */
 
-var ready = false;
 var token_timeline = "";
 
 var locationLat;
@@ -249,7 +248,6 @@ Pebble.addEventListener("ready", function() {
 			token_timeline = token;
 			localStorage.setItem("token_timeline", token_timeline);
 			console.log("Saving timeline token: " + token_timeline);
-			ready = true;
 			sendReady();
 			locationFetch();
 		}, function(error) { // Failure
@@ -258,7 +256,6 @@ Pebble.addEventListener("ready", function() {
 				token_timeline = "";
 			}
 			console.log("Error getting timeline token (" + error + "), using old token: " + token_timeline);
-			ready = true;
 			sendReady();
 			locationFetch();
 		}
@@ -266,18 +263,10 @@ Pebble.addEventListener("ready", function() {
 });
 
 // Open configuration page
-function showConfiguration() {
-	if (ready) {
-		var token_account = Pebble.getAccountToken();
-		console.log("Opened configuration screen on phone");
-		Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(token_account) + "?token_timeline=" + encodeURIComponent(token_timeline));
-	} else {
-		setTimeout(function() { showConfiguration(); }, 100);
-	}
-}
-
 Pebble.addEventListener("showConfiguration", function() {
-	showConfiguration();
+	console.log("Opened configuration screen on phone");
+	var token_account = Pebble.getAccountToken();
+	Pebble.openURL("https://commute-pebble.appspot.com/config/" + encodeURIComponent(token_account));
 });
 
 Pebble.addEventListener("webviewclosed", function() {
