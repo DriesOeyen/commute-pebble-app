@@ -46,7 +46,8 @@ typedef enum {
 	RESPONSE_ERROR = 4,
 	RESPONSE_DURATION_NORMAL = 5,
 	RESPONSE_DURATION_TRAFFIC = 6,
-	RESPONSE_VIA = 7
+	RESPONSE_VIA = 7,
+	PREFERENCE_AM_PM = 8
 } AppMessageTupleType;
 
 typedef enum {

@@ -15,6 +15,7 @@ var locationOptions = {
 var requestIdLatest = -1;
 var requestOrig;
 var requestDest;
+var preferenceAmPm;
 var requestReceived = false;
 
 var responseTypeReady = 0;
@@ -131,7 +132,8 @@ function directionsFetch(requestId) {
 		"/directions/" + encodeURIComponent(token_account) +
 		"?token_timeline=" + encodeURIComponent(token_timeline) +
 		"&request_orig=" + encodeURIComponent(requestOrig) +
-		"&request_dest=" + encodeURIComponent(requestDest);
+		"&request_dest=" + encodeURIComponent(requestDest) +
+		"&am_pm=" + encodeURIComponent(preferenceAmPm.toString());
 	if (requestOrig === 0 || requestDest === 0) {
 		url += "&request_coord=" + encodeURIComponent(locationLat) + "," + encodeURIComponent(locationLon);
 	}
@@ -281,6 +283,7 @@ Pebble.addEventListener("appmessage", function(e) {
 		requestIdLatest = e.payload.REQUEST_ID;
 		requestOrig = e.payload.REQUEST_ORIG;
 		requestDest = e.payload.REQUEST_DEST;
+		preferenceAmPm = e.payload.PREFERENCE_AM_PM === 1;
 		requestReceived = true;
 		if (locationError) {
 			sendError(errorLocation);
