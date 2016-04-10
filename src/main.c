@@ -32,6 +32,7 @@ static void send_request() {
 				request_dest = REQUEST_TYPE_HOME;
 				break;
 		}
+		int preference_am_pm = clock_is_24h_style() ? 0 : 1;
 		
 		// Init message
 		DictionaryIterator *iter;
@@ -43,6 +44,7 @@ static void send_request() {
 		dict_write_int8(iter, REQUEST_ID, request_id);
 		dict_write_int8(iter, REQUEST_ORIG, request_orig);
 		dict_write_int8(iter, REQUEST_DEST, request_dest);
+		dict_write_int8(iter, PREFERENCE_AM_PM, preference_am_pm);
 		dict_write_end(iter);
 		
 		// Send message
@@ -660,7 +662,7 @@ static void init(void) {
 	app_message_register_outbox_failed(out_failed_handler);
 	
 	int size_buffer_in = dict_calc_buffer_size(5, sizeof(int32_t), sizeof(int32_t), sizeof(int32_t), CAPTION_BYTE_LENGTH, sizeof(int32_t));
-	int size_buffer_out = dict_calc_buffer_size(3, sizeof(int8_t), sizeof(int8_t), sizeof(int8_t));
+	int size_buffer_out = dict_calc_buffer_size(4, sizeof(int8_t), sizeof(int8_t), sizeof(int8_t), sizeof(int8_t));
 	app_message_open(size_buffer_in, size_buffer_out);
 }
 
