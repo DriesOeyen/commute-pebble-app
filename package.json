@@ -1,0 +1,90 @@
+{
+    "name": "commute-pebble",
+    "author": "Nexworx",
+    "version": "1.5.0",
+    "private": true,
+    "dependencies": {},
+    "pebble": {
+        "uuid": "ae5e3925-781e-41b5-b5c0-50f2984fc5ed",
+        "displayName": "Commute",
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite"
+        ],
+        "enableMultiJS": false,
+        "watchapp": {
+            "watchface": false,
+            "hiddenApp": false,
+            "onlyShownOnCommunication": false
+        },
+        "capabilities": [
+            "location",
+            "configurable"
+        ],
+        "messageKeys": {
+            "REQUEST_ID": 0,
+            "REQUEST_ORIG": 1,
+            "REQUEST_DEST": 2,
+            "RESPONSE_TYPE": 3,
+            "RESPONSE_ERROR": 4,
+            "RESPONSE_DURATION_NORMAL": 5,
+            "RESPONSE_DURATION_TRAFFIC": 6,
+            "RESPONSE_VIA": 7,
+            "PREFERENCE_AM_PM": 8
+        },
+        "resources": {
+            "media": [
+                {
+                    "memoryFormat": "1Bit",
+                    "menuIcon": true,
+                    "type": "bitmap",
+                    "name": "IMAGE_ICON_MENU",
+                    "file": "images/IconMenu.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_LOADING",
+                    "file": "images/Loading.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_ERROR",
+                    "file": "images/Error.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_DOWN",
+                    "file": "images/Down.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_UP",
+                    "file": "images/Up.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_ARROW",
+                    "file": "images/Arrow.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_WORK",
+                    "file": "images/Work.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_HOME",
+                    "file": "images/Home.png"
+                },
+                {
+                    "type": "bitmap",
+                    "name": "IMAGE_PIN",
+                    "file": "images/Pin.png"
+                }
+            ]
+        }
+    }
+}

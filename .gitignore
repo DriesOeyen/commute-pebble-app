@@ -34,3 +34,6 @@ build/
 
 # Debug files
 *.dSYM/
+
+# npm modules
+node_modules/
