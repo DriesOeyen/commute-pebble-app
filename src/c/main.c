@@ -33,20 +33,20 @@ static void send_request() {
 				break;
 		}
 		int preference_am_pm = clock_is_24h_style() ? 0 : 1;
-		
+
 		// Init message
 		DictionaryIterator *iter;
 		int result = app_message_outbox_begin(&iter);
 		if (result != APP_MSG_OK)
 			APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't initialize AppMessage outbox dictionary (error: %d)", result);
-		
+
 		// Put tuples in dictionary
-		dict_write_int8(iter, REQUEST_ID, request_id);
-		dict_write_int8(iter, REQUEST_ORIG, request_orig);
-		dict_write_int8(iter, REQUEST_DEST, request_dest);
-		dict_write_int8(iter, PREFERENCE_AM_PM, preference_am_pm);
+		dict_write_int8(iter, MESSAGE_KEY_REQUEST_ID, request_id);
+		dict_write_int8(iter, MESSAGE_KEY_REQUEST_ORIG, request_orig);
+		dict_write_int8(iter, MESSAGE_KEY_REQUEST_DEST, request_dest);
+		dict_write_int8(iter, MESSAGE_KEY_PREFERENCE_AM_PM, preference_am_pm);
 		dict_write_end(iter);
-		
+
 		// Send message
 		app_message_outbox_send();
 	} else {
@@ -76,19 +76,19 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 	#ifdef DEBUG
 	APP_LOG(APP_LOG_LEVEL_DEBUG, "Parsing incoming AppMessage...");
 	#endif
-	
-	Tuple *tup_request_id = dict_find(received, REQUEST_ID);
-	Tuple *tup_response_type = dict_find(received, RESPONSE_TYPE);
-	Tuple *tup_response_error = dict_find(received, RESPONSE_ERROR);
-	Tuple *tup_response_duration_normal = dict_find(received, RESPONSE_DURATION_NORMAL);
-	Tuple *tup_response_duration_traffic = dict_find(received, RESPONSE_DURATION_TRAFFIC);
-	Tuple *tup_response_via = dict_find(received, RESPONSE_VIA);
-	
+
+	Tuple *tup_request_id = dict_find(received, MESSAGE_KEY_REQUEST_ID);
+	Tuple *tup_response_type = dict_find(received, MESSAGE_KEY_RESPONSE_TYPE);
+	Tuple *tup_response_error = dict_find(received, MESSAGE_KEY_RESPONSE_ERROR);
+	Tuple *tup_response_duration_normal = dict_find(received, MESSAGE_KEY_RESPONSE_DURATION_NORMAL);
+	Tuple *tup_response_duration_traffic = dict_find(received, MESSAGE_KEY_RESPONSE_DURATION_TRAFFIC);
+	Tuple *tup_response_via = dict_find(received, MESSAGE_KEY_RESPONSE_VIA);
+
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
 	int16_t duration_difference;
 	float delay_ratio;
 	GColor color_background;
-	
+
 	switch ((ResponseType) tup_response_type->value->int8) {
 		case RESPONSE_TYPE_READY:
 			data_layer_data->status = STATUS_LOCATING;
@@ -149,7 +149,7 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 
 static void in_dropped_handler(AppMessageResult reason, void *context) {
 	APP_LOG(APP_LOG_LEVEL_ERROR, "Dropping incoming AppMessage (error: %d)", reason);
-	
+
 	// Bluetooth transmission error
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
 	data_layer_data->status = STATUS_ERROR;
@@ -167,7 +167,7 @@ static void out_sent_handler(DictionaryIterator *sent, void *context) {
 
 static void out_failed_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 	APP_LOG(APP_LOG_LEVEL_ERROR, "PebbleKit JS NACK (error: %d)", reason);
-	
+
 	// Bluetooth transmission error
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
 	data_layer_data->status = STATUS_ERROR;
@@ -212,7 +212,7 @@ static void layer_page_icons_load() {
 	icon_home = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HOME);
 	icon_work = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_WORK);
 	icon_arrow = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ARROW);
-	
+
 	// Create icon layers
 	layer_orig = bitmap_layer_create(GRect(0, 0, 20, 20));
 	if (layer_orig == NULL)
@@ -220,7 +220,7 @@ static void layer_page_icons_load() {
 	bitmap_layer_set_compositing_mode(layer_orig, GCompOpSet);
 	bitmap_layer_set_alignment(layer_orig, GAlignCenter);
 	layer_add_child(layer_page_icons, bitmap_layer_get_layer(layer_orig));
-	
+
 	layer_to = bitmap_layer_create(GRect(25, 0, 20, 20));
 	if (layer_to == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create to icon layer");
@@ -228,7 +228,7 @@ static void layer_page_icons_load() {
 	bitmap_layer_set_alignment(layer_to, GAlignCenter);
 	bitmap_layer_set_bitmap(layer_to, icon_arrow);
 	layer_add_child(layer_page_icons, bitmap_layer_get_layer(layer_to));
-	
+
 	layer_dest = bitmap_layer_create(GRect(50, 0, 20, 20));
 	if (layer_dest == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create destination icon layer");
@@ -241,7 +241,7 @@ static void layer_page_icons_unload() {
 	bitmap_layer_destroy(layer_orig);
 	bitmap_layer_destroy(layer_to);
 	bitmap_layer_destroy(layer_dest);
-	
+
 	gbitmap_destroy(icon_pin);
 	gbitmap_destroy(icon_home);
 	gbitmap_destroy(icon_work);
@@ -255,7 +255,7 @@ static void draw_layer_data(Layer *layer, GContext *ctx) {
 	layer_set_hidden(text_layer_get_layer(layer_duration_label), true);
 	layer_set_hidden(bitmap_layer_get_layer(layer_status_icon), true);
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
-	
+
 	// Figure out what to draw
 	switch ((Status) data_layer_data->status) {
 		case STATUS_CONNECTING:
@@ -332,10 +332,10 @@ static void layer_data_load() {
 	// Create icon bitmaps
 	icon_loading = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_LOADING);
 	icon_error = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_ERROR);
-	
+
 	// Get data layer bounds
 	GRect bounds_layer_data = layer_get_bounds(layer_data);
-	
+
 	// Set up page icons layer
 	const GRect frame_page_icons = GRect(
 		(bounds_layer_data.size.w / 2) - 35,
@@ -349,7 +349,7 @@ static void layer_data_load() {
 	layer_set_update_proc(layer_page_icons, draw_layer_page_icons);
 	layer_page_icons_load();
 	layer_add_child(layer_data, layer_page_icons);
-	
+
 	// Set up duration layer
 	const GRect frame_duration = GRect(
 		0,
@@ -366,7 +366,7 @@ static void layer_data_load() {
 	text_layer_set_text_alignment(layer_duration, GTextAlignmentCenter);
 	text_layer_set_text(layer_duration, string_duration);
 	layer_add_child(layer_data, text_layer_get_layer(layer_duration));
-	
+
 	// Set up duration label layer
 	const GRect frame_duration_label = GRect(
 		0,
@@ -383,7 +383,7 @@ static void layer_data_load() {
 	text_layer_set_text_alignment(layer_duration_label, GTextAlignmentCenter);
 	text_layer_set_text(layer_duration_label, string_duration_label);
 	layer_add_child(layer_data, text_layer_get_layer(layer_duration_label));
-	
+
 	// Set up caption layer
 	const GRect frame_caption = GRect(
 		0,
@@ -400,7 +400,7 @@ static void layer_data_load() {
 	text_layer_set_text_alignment(layer_caption, GTextAlignmentCenter);
 	text_layer_set_text(layer_caption, string_caption);
 	layer_add_child(layer_data, text_layer_get_layer(layer_caption));
-	
+
 	// Set up status icon layer
 	const GRect frame_status_icon = GRect(
 		(bounds_layer_data.size.w / 2) - 25,
@@ -418,13 +418,13 @@ static void layer_data_load() {
 
 static void layer_data_unload() {
 	layer_page_icons_unload();
-	
+
 	layer_destroy(layer_page_icons);
 	text_layer_destroy(layer_duration);
 	text_layer_destroy(layer_duration_label);
 	text_layer_destroy(layer_caption);
 	bitmap_layer_destroy(layer_status_icon);
-	
+
 	gbitmap_destroy(icon_loading);
 	gbitmap_destroy(icon_error);
 }
@@ -442,10 +442,10 @@ static void draw_layer_page_indicator_up() {
 static void layer_page_indicator_up_load() {
 	// Create icon bitmaps
 	icon_up = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_UP);
-	
+
 	// Get data layer bounds
 	GRect bounds_layer_page_indicator_up = layer_get_bounds(layer_page_indicator_up);
-	
+
 	// Create icon layers
 	const GRect frame_page_indicator_up_icon = GRect(
 		0,
@@ -480,10 +480,10 @@ static void draw_layer_page_indicator_down() {
 static void layer_page_indicator_down_load() {
 	// Create icon bitmaps
 	icon_down = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DOWN);
-	
+
 	// Get data layer bounds
 	GRect bounds_layer_page_indicator_down = layer_get_bounds(layer_page_indicator_down);
-	
+
 	// Create icon layers
 	const GRect frame_page_indicator_down_icon = GRect(
 		0,
@@ -509,7 +509,7 @@ static void layer_page_indicator_down_unload() {
 static void window_load(Window *window) {
 	Layer *layer_window = window_get_root_layer(window);
 	GRect bounds_window = layer_get_bounds(layer_window);
-	
+
 	// Set up status bar layer
 	status_bar_layer = status_bar_layer_create();
 	if (status_bar_layer == NULL)
@@ -517,7 +517,7 @@ static void window_load(Window *window) {
 	status_bar_layer_set_colors(status_bar_layer, GColorClear, GColorWhite);
 	status_bar_layer_set_separator_mode(status_bar_layer, StatusBarLayerSeparatorModeDotted);
 	layer_add_child(layer_window, status_bar_layer_get_layer(status_bar_layer));
-	
+
 	// Set up data layer
 	const GRect frame_data = GRect(
 		0,
@@ -542,7 +542,7 @@ static void window_load(Window *window) {
 	layer_set_update_proc(layer_data, draw_layer_data);
 	layer_data_load();
 	layer_add_child(layer_window, layer_data);
-	
+
 	// Set up page indicator up layer
 	const GRect frame_page_indicator_up = GRect(
 		0,
@@ -556,7 +556,7 @@ static void window_load(Window *window) {
 	layer_set_update_proc(layer_page_indicator_up, draw_layer_page_indicator_up);
 	layer_page_indicator_up_load();
 	layer_add_child(layer_window, layer_page_indicator_up);
-	
+
 	// Set up page indicator down layer
 	const GRect frame_page_indicator_down = GRect(
 		0,
@@ -576,7 +576,7 @@ static void window_unload(Window *window) {
 	layer_data_unload();
 	layer_page_indicator_up_unload();
 	layer_page_indicator_down_unload();
-	
+
 	status_bar_layer_destroy(status_bar_layer);
 	layer_destroy(layer_data);
 	layer_destroy(layer_page_indicator_up);
@@ -641,7 +641,7 @@ static void init(void) {
 		else
 			page = PAGE_LOCATION_HOME;
 	}
-	
+
 	// Create window
 	window = window_create();
 	if (window == NULL)
@@ -660,7 +660,7 @@ static void init(void) {
 	app_message_register_inbox_dropped(in_dropped_handler);
 	app_message_register_outbox_sent(out_sent_handler);
 	app_message_register_outbox_failed(out_failed_handler);
-	
+
 	int size_buffer_in = dict_calc_buffer_size(5, sizeof(int32_t), sizeof(int32_t), sizeof(int32_t), CAPTION_BYTE_LENGTH, sizeof(int32_t));
 	int size_buffer_out = dict_calc_buffer_size(4, sizeof(int8_t), sizeof(int8_t), sizeof(int8_t), sizeof(int8_t));
 	app_message_open(size_buffer_in, size_buffer_out);

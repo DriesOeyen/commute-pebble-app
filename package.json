@@ -14,7 +14,7 @@
             "chalk",
             "diorite"
         ],
-        "enableMultiJS": false,
+        "enableMultiJS": true,
         "watchapp": {
             "watchface": false,
             "hiddenApp": false,
@@ -24,17 +24,17 @@
             "location",
             "configurable"
         ],
-        "messageKeys": {
-            "REQUEST_ID": 0,
-            "REQUEST_ORIG": 1,
-            "REQUEST_DEST": 2,
-            "RESPONSE_TYPE": 3,
-            "RESPONSE_ERROR": 4,
-            "RESPONSE_DURATION_NORMAL": 5,
-            "RESPONSE_DURATION_TRAFFIC": 6,
-            "RESPONSE_VIA": 7,
-            "PREFERENCE_AM_PM": 8
-        },
+        "messageKeys": [
+            "REQUEST_ID",
+            "REQUEST_ORIG",
+            "REQUEST_DEST",
+            "RESPONSE_TYPE",
+            "RESPONSE_ERROR",
+            "RESPONSE_DURATION_NORMAL",
+            "RESPONSE_DURATION_TRAFFIC",
+            "RESPONSE_VIA",
+            "PREFERENCE_AM_PM"
+        ],
         "resources": {
             "media": [
                 {
