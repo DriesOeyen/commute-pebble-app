@@ -71,9 +71,10 @@
     "sdkVersion": "3",
     "shortName": "Commute",
     "targetPlatforms": [
-	    "aplite",
+        "aplite",
         "basalt",
-        "chalk"
+        "chalk",
+        "diorite"
     ],
     "uuid": "ae5e3925-781e-41b5-b5c0-50f2984fc5ed",
     "versionLabel": "1.5",
