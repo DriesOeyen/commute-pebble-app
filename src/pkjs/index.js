@@ -1,5 +1,6 @@
 /* global Pebble:true, console:true */
 
+var keys = require("message_keys");
 var token_timeline = "";
 
 var locationLat;
@@ -61,42 +62,37 @@ function sendAppMessage(dictionary, description) {
 }
 
 function sendReady() {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeReady
-	};
+	var dictionary = {};
+	dictionary[keys.RESPONSE_TYPE] = responseTypeReady;
 	sendAppMessage(dictionary, "ready");
 }
 
 function sendLocated() {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeLocated
-	};
+	var dictionary = {};
+	dictionary[keys.RESPONSE_TYPE] = responseTypeLocated;
 	sendAppMessage(dictionary, "located");
 }
 
 function sendDirections(requestId, durationNormal, durationTraffic, via) {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeDirections,
-		"RESPONSE_DURATION_NORMAL": durationNormal,
-		"RESPONSE_DURATION_TRAFFIC": durationTraffic,
-		"RESPONSE_VIA": via,
-		"REQUEST_ID": requestId
-	};
+	var dictionary = {};
+	dictionary[keys.RESPONSE_TYPE] = responseTypeDirections;
+	dictionary[keys.RESPONSE_DURATION_NORMAL] = durationNormal;
+	dictionary[keys.RESPONSE_DURATION_TRAFFIC] = durationTraffic;
+	dictionary[keys.RESPONSE_VIA] = via;
+	dictionary[keys.REQUEST_ID] = requestId;
 	sendAppMessage(dictionary, "directions");
 }
 
 function sendError(error) {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeError,
-		"RESPONSE_ERROR": error
-	};
+	var dictionary = {};
+	dictionary[keys.RESPONSE_TYPE] = responseTypeError;
+	dictionary[keys.RESPONSE_ERROR] = error;
 	sendAppMessage(dictionary, "error");
 }
 
 function sendConfigChanged() {
-	var dictionary = {
-		"RESPONSE_TYPE": responseTypeConfigChanged
-	};
+	var dictionary = {};
+	dictionary[keys.RESPONSE_TYPE] = responseTypeConfigChanged;
 	sendAppMessage(dictionary, "config changed");
 }
 
