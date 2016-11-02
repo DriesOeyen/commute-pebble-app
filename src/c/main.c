@@ -350,11 +350,32 @@ static void layer_data_load() {
 	layer_page_icons_load();
 	layer_add_child(layer_data, layer_page_icons);
 
+	// Set up duration module bounds
+	GRect bounds_duration_module;
+	switch (preferred_content_size()) {
+		case (PreferredContentSizeLarge):
+			bounds_duration_module = GRect(
+				0,
+				(bounds_layer_data.size.h / 2) - 38,
+				bounds_layer_data.size.w,
+				68
+			);
+			break;
+		default:
+			bounds_duration_module = GRect(
+				0,
+				(bounds_layer_data.size.h / 2) - 36,
+				bounds_layer_data.size.w,
+				68
+			);
+			break;
+	}
+
 	// Set up duration layer
 	const GRect frame_duration = GRect(
-		0,
-		(bounds_layer_data.size.h / 2) - 36,
-		bounds_layer_data.size.w,
+		bounds_duration_module.origin.x,
+		bounds_duration_module.origin.y,
+		bounds_duration_module.size.w,
 		42
 	);
 	layer_duration = text_layer_create(frame_duration);
@@ -369,9 +390,9 @@ static void layer_data_load() {
 
 	// Set up duration label layer
 	const GRect frame_duration_label = GRect(
-		0,
-		(bounds_layer_data.size.h / 2) + 4,
-		bounds_layer_data.size.w,
+		bounds_duration_module.origin.x,
+		bounds_duration_module.origin.y + bounds_duration_module.size.h - 28,
+		bounds_duration_module.size.w,
 		28
 	);
 	layer_duration_label = text_layer_create(frame_duration_label);
