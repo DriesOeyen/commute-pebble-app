@@ -12,7 +12,8 @@
             "aplite",
             "basalt",
             "chalk",
-            "diorite"
+            "diorite",
+            "emery"
         ],
         "enableMultiJS": true,
         "watchapp": {
