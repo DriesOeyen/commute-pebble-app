@@ -85,11 +85,11 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 	Tuple *tup_response_via = dict_find(received, MESSAGE_KEY_RESPONSE_VIA);
 
 	DataLayerData *data_layer_data = (DataLayerData*) layer_get_data(layer_data);
-	int16_t duration_difference;
+	int32_t duration_difference;
 	float delay_ratio;
 	GColor color_background;
 
-	switch ((ResponseType) tup_response_type->value->int8) {
+	switch ((ResponseType) tup_response_type->value->int32) {
 		case RESPONSE_TYPE_READY:
 			data_layer_data->status = STATUS_LOCATING;
 			color_background = PBL_IF_COLOR_ELSE(GColorDarkGray, GColorBlack);
@@ -105,18 +105,18 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 			break;
 		case RESPONSE_TYPE_DIRECTIONS:
 			// Filter out outdated requests
-			if (request_id == tup_request_id->value->int8) {
+			if (request_id == tup_request_id->value->int32) {
 				// Calculate delay
-				duration_difference = tup_response_duration_traffic->value->int16 - tup_response_duration_normal->value->int16;
+				duration_difference = tup_response_duration_traffic->value->int32 - tup_response_duration_normal->value->int32;
 				if (duration_difference < 0) // Set delay to 0 if negative
 					duration_difference = 0;
-				if (tup_response_duration_normal->value->int16 == 0) // Prevent division by 0
+				if (tup_response_duration_normal->value->int32 == 0) // Prevent division by 0
 					delay_ratio = 0;
 				else
-					delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int16;
+					delay_ratio = (float) duration_difference / (float) tup_response_duration_normal->value->int32;
 				// Update data layer data
 				data_layer_data->status = STATUS_DONE;
-				data_layer_data->duration_current = tup_response_duration_traffic->value->int16;
+				data_layer_data->duration_current = tup_response_duration_traffic->value->int32;
 				data_layer_data->duration_delay = duration_difference;
 				snprintf(data_layer_data->via, sizeof(data_layer_data->via), "%s", tup_response_via->value->cstring);
 				data_layer_data->mode_delay = false;
@@ -131,12 +131,12 @@ static void in_received_handler(DictionaryIterator *received, void *context) {
 				window_set_background_color(window, color_background);
 				layer_mark_dirty(window_get_root_layer(window));
 			} else {
-				APP_LOG(APP_LOG_LEVEL_INFO, "Received response for old request (%d), dropping.", tup_request_id->value->int8);
+				APP_LOG(APP_LOG_LEVEL_INFO, "Received response for old request (%ld), dropping.", tup_request_id->value->int32);
 			}
 			break;
 		case RESPONSE_TYPE_ERROR:
 			data_layer_data->status = STATUS_ERROR;
-			data_layer_data->error = (Error) tup_response_error->value->int8;
+			data_layer_data->error = (Error) tup_response_error->value->int32;
 			color_background = PBL_IF_COLOR_ELSE(GColorBlack, GColorBlack);
 			window_set_background_color(window, color_background);
 			layer_mark_dirty(window_get_root_layer(window));
