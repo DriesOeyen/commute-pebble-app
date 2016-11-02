@@ -385,16 +385,32 @@ static void layer_data_load() {
 	layer_add_child(layer_data, text_layer_get_layer(layer_duration_label));
 
 	// Set up caption layer
+	GFont font_caption;
+	int frame_caption_h;
+	switch (preferred_content_size()) {
+		case PreferredContentSizeLarge:
+			font_caption = fonts_get_system_font(FONT_KEY_GOTHIC_24);
+			frame_caption_h = 28;
+			break;
+		case PreferredContentSizeExtraLarge:
+			font_caption = fonts_get_system_font(FONT_KEY_GOTHIC_28);
+			frame_caption_h = 32;
+			break;
+		default:
+			font_caption = fonts_get_system_font(FONT_KEY_GOTHIC_18);
+			frame_caption_h = 22;
+			break;
+	}
 	const GRect frame_caption = GRect(
 		10,
-		bounds_layer_data.size.h - 22 - LAYER_PAGE_INDICATOR_MARGIN,
-		22
+		bounds_layer_data.size.h - frame_caption_h - LAYER_PAGE_INDICATOR_MARGIN,
 		bounds_layer_data.size.w - 20,
+		frame_caption_h
 	);
 	layer_caption = text_layer_create(frame_caption);
 	if (layer_caption == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create caption layer");
-	text_layer_set_font(layer_caption, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+	text_layer_set_font(layer_caption, font_caption);
 	text_layer_set_text_color(layer_caption, GColorWhite);
 	text_layer_set_background_color(layer_caption, GColorClear);
 	text_layer_set_text_alignment(layer_caption, GTextAlignmentCenter);
