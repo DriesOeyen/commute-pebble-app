@@ -386,10 +386,10 @@ static void layer_data_load() {
 
 	// Set up caption layer
 	const GRect frame_caption = GRect(
-		0,
+		10,
 		bounds_layer_data.size.h - 22 - LAYER_PAGE_INDICATOR_MARGIN,
-		bounds_layer_data.size.w,
 		22
+		bounds_layer_data.size.w - 20,
 	);
 	layer_caption = text_layer_create(frame_caption);
 	if (layer_caption == NULL)
@@ -398,6 +398,7 @@ static void layer_data_load() {
 	text_layer_set_text_color(layer_caption, GColorWhite);
 	text_layer_set_background_color(layer_caption, GColorClear);
 	text_layer_set_text_alignment(layer_caption, GTextAlignmentCenter);
+	text_layer_set_overflow_mode(layer_caption, GTextOverflowModeFill);
 	text_layer_set_text(layer_caption, string_caption);
 	layer_add_child(layer_data, text_layer_get_layer(layer_caption));
 
@@ -542,6 +543,7 @@ static void window_load(Window *window) {
 	layer_set_update_proc(layer_data, draw_layer_data);
 	layer_data_load();
 	layer_add_child(layer_window, layer_data);
+	text_layer_enable_screen_text_flow_and_paging(layer_caption, 10); // Wrap caption correctly on non-square displays
 
 	// Set up page indicator up layer
 	const GRect frame_page_indicator_up = GRect(

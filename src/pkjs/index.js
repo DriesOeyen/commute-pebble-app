@@ -145,8 +145,8 @@ function directionsFetch(requestId) {
 					var durationNormal = Math.round(responseJson.routes[0].legs[0].duration.value / 60);
 					var durationTraffic = Math.round(responseJson.routes[0].legs[0].duration_in_traffic.value / 60);
 					var via = "via " + responseJson.routes[0].summary;
-					if (via.length > 15) { // Truncate via label
-						via = via.substring(0,12) + "...";
+					if (via.length > 60) { // Truncate via label
+						via = via.substring(0,60);
 					} else if (via.length === 4) { // Empty via label
 						via = "";
 					}

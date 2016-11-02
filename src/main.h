@@ -13,7 +13,7 @@
 
 #define DURATION_BYTE_LENGTH 5
 #define DURATION_LABEL_BYTE_LENGTH 14
-#define CAPTION_BYTE_LENGTH 49 // For 15 characters: 4 byte ("via ") + 11*4 byte (random UTF-8) + 1 byte ('\0') = 49 byte
+#define CAPTION_BYTE_LENGTH 229 // For 56 characters: 4 byte ("via ") + 56*4 byte (random UTF-8) + 1 byte ('\0') = 229 byte
 
 #define LAYER_PAGE_INDICATOR_HEIGHT 16
 #define LAYER_PAGE_INDICATOR_MARGIN 4
