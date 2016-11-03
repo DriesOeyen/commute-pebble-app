@@ -361,6 +361,14 @@ static void layer_data_load() {
 				68
 			);
 			break;
+		case (PreferredContentSizeExtraLarge):
+			bounds_duration_module = GRect(
+				0,
+				(bounds_layer_data.size.h / 2) - 44,
+				bounds_layer_data.size.w,
+				72
+			);
+			break;
 		default:
 			bounds_duration_module = GRect(
 				0,
@@ -389,16 +397,28 @@ static void layer_data_load() {
 	layer_add_child(layer_data, text_layer_get_layer(layer_duration));
 
 	// Set up duration label layer
+	GFont font_duration_label;
+	int frame_duration_label_h;
+	switch (preferred_content_size()) {
+		case PreferredContentSizeExtraLarge:
+			font_duration_label = fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+			frame_duration_label_h = 32;
+			break;
+		default:
+			font_duration_label = fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD);
+			frame_duration_label_h = 28;
+			break;
+	}
 	const GRect frame_duration_label = GRect(
 		bounds_duration_module.origin.x,
 		bounds_duration_module.origin.y + bounds_duration_module.size.h - 28,
 		bounds_duration_module.size.w,
-		28
+		frame_duration_label_h
 	);
 	layer_duration_label = text_layer_create(frame_duration_label);
 	if (layer_duration_label == NULL)
 		APP_LOG(APP_LOG_LEVEL_ERROR, "Couldn't create duration label layer");
-	text_layer_set_font(layer_duration_label, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+	text_layer_set_font(layer_duration_label, font_duration_label);
 	text_layer_set_text_color(layer_duration_label, GColorWhite);
 	text_layer_set_background_color(layer_duration_label, GColorClear);
 	text_layer_set_text_alignment(layer_duration_label, GTextAlignmentCenter);
