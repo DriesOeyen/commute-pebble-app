@@ -21,3 +21,4 @@ Compile the app with Pebble SDK version 3. Device compatibility:
 - Pebble Time Steel
 - Pebble Time Rounnd
 - Pebble 2
+- Pebble Time 2 (unfinished, see `emery` branch)
